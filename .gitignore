@@ -1,3 +1,12 @@
+# 忽略 .trae 目录
+.trae/
+
+# 忽略 test 目录
+src/test/
+
+# 忽略 Maven 构建输出目录
+target/
+
 # Compiled class file
 *.class
 

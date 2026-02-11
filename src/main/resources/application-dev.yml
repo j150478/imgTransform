@@ -1,0 +1,72 @@
+# 开发环境配置文件
+# 用于本地开发和调试
+
+spring:
+  # 启用开发配置
+  config:
+    activate:
+      on-profile: dev
+
+  # 开发模式下启用调试功能
+  devtools:
+    restart:
+      enabled: true
+      additional-paths: src/main/java
+    livereload:
+      enabled: true
+
+  # 日志级别配置（开发模式更详细）
+  output:
+    ansi:
+      enabled: always
+
+# 服务器配置（开发模式使用不同端口）
+server:
+  port: 8080
+  # 启用错误页面调试信息
+  error:
+    include-message: always
+    include-binding-errors: always
+    include-stacktrace: always
+
+# 日志配置（开发模式 DEBUG 级别）
+logging:
+  level:
+    root: DEBUG
+    com.phototransform: TRACE
+    org.springframework.web: DEBUG
+    org.hibernate.SQL: DEBUG
+  pattern:
+    console: "%clr(%d{yyyy-MM-dd HH:mm:ss.SSS}){faint} %clr([%thread]){magenta} %clr(%-5level) %clr(%logger{36}){cyan} - %msg%n"
+
+# 火山引擎 Seedream 配置（开发环境使用测试密钥）
+# 注意：开发环境可以使用测试密钥，生产环境必须从环境变量读取
+seedream:
+  # 开发环境测试密钥（请替换为实际测试密钥）
+  access-key-id: ${SEEDREAM_ACCESS_KEY_ID:test-key-id}
+  access-key-secret: ${SEEDREAM_ACCESS_KEY_SECRET:test-key-secret}
+  # 使用测试环境端点
+  endpoint: seedream.volces.com
+  # 开发环境缩短超时便于调试
+  connection-timeout: 5000
+  read-timeout: 30000
+
+# 应用自定义配置（开发模式）
+app:
+  storage:
+    # 开发环境使用本地存储
+    type: local
+    local-path: dev-uploads/
+    url-prefix: http://localhost:8080/dev-uploads/
+  task:
+    # 开发环境缩短过期时间便于测试
+    expire-hours: 1
+    cleanup-cron: 0 */5 * * * ?
+
+# CORS 跨域配置（开发环境允许所有来源）
+cors:
+  allowed-origins: "*"
+  allowed-methods: "*"
+  allowed-headers: "*"
+  allow-credentials: false
+  max-age: 3600
