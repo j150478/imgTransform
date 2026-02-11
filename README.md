@@ -18,6 +18,7 @@
 | Maven | 3.x | 构建工具 |
 | Lombok | 最新 | 简化代码 |
 | Validation | 最新 | 参数校验 |
+| 火山方舟 SDK | LATEST | 接入 Seedream API |
 
 ## 快速开始
 
@@ -32,7 +33,7 @@
 1. **克隆项目**
 ```bash
 git clone <repository-url>
-cd photo-transform-service
+cd api-pj
 ```
 
 2. **配置环境**
@@ -106,19 +107,40 @@ photo-transform-service/
 │   │   ├── ApiResponse.java              # 统一响应
 │   │   └── BusinessException.java        # 业务异常
 │   ├── config/                           # 配置类
+│   │   ├── AppConfig.java                # 应用配置
+│   │   └── SeedreamClientConfig.java     # Seedream 客户端配置
 │   ├── controller/                       # 控制器层
+│   │   └── PhotoTransformController.java  # 照片转换控制器
 │   ├── domain/                           # 领域模型
 │   │   ├── dto/                          # 数据传输对象
+│   │   │   ├── PhotoTransformRequest.java
+│   │   │   ├── PhotoTransformResponse.java
+│   │   │   └── PhotoTransformResultResponse.java
 │   │   ├── entity/                       # 实体类
+│   │   │   └── PhotoTransformTask.java
 │   │   └── enums/                        # 枚举类
+│   │       ├── ModelType.java
+│   │       └── TransformStatus.java
+│   ├── dto/                              # 图像生成 DTO
+│   │   ├── ImageGenerationRequest.java
+│   │   └── ImageGenerationResult.java
+│   ├── enums/                            # 图像生成枚举
+│   │   ├── GenerationCapability.java
+│   │   └── GenerationMode.java
 │   ├── repository/                       # 数据访问层
+│   │   └── PhotoTransformTaskRepository.java
 │   └── service/                          # 业务逻辑层
-│       └── impl/                         # 实现类
+│       ├── PhotoTransformService.java     # 照片转换服务接口
+│       ├── SeedreamImageService.java      # Seedream 图像服务接口
+│       └── impl/                          # 实现类
+│           ├── PhotoTransformServiceImpl.java
+│           └── SeedreamImageServiceImpl.java
 ├── src/main/resources/
 │   ├── application.yml                   # 主配置
 │   └── application-dev.yml               # 开发环境配置
 ├── pom.xml                               # Maven 配置
-└── README.md                             # 项目说明
+├── README.md                             # 项目说明
+└── README.en.md                          # 英文项目说明
 ```
 
 ## 配置说明
@@ -141,7 +163,7 @@ server:
 
 seedream:
   api:
-    key: ${SEEDREAM_API_KEY:your-api-key-here}
+    key: ${ARK_API_KEY:your-api-key-here}
     endpoint: ${SEEDREAM_API_ENDPOINT:https://api.seedream.com/v1}
     timeout: 30000
 
@@ -194,7 +216,7 @@ logging:
 ## 常见问题
 
 ### Q: 如何配置 Seedream API 密钥？
-**A:** 在 `application-dev.yml` 中配置 `seedream.api.key`，或使用环境变量 `SEEDREAM_API_KEY`。
+**A:** 在 `application-dev.yml` 中配置 `seedream.api.key`，或使用环境变量 `ARK_API_KEY`。
 
 ### Q: 服务启动失败，端口被占用怎么办？
 **A:** 修改 `application.yml` 中的 `server.port` 配置，使用其他端口。
