@@ -24,10 +24,10 @@ import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
 /**
- * Seedream 图像生成服务实现
+ * Seedream 图像生成服务实现类。
  *
- * 基于火山引擎 doubao-seedream-4.5 模型的图像生成服务实现类。
- * 支持文生图、图生图、组图生成等多种生成能力。
+ * <p>基于火山引擎 doubao-seedream-4.5 模型的图像生成服务实现类。
+ * 支持文生图、图生图、组图生成等多种生成能力。</p>
  *
  * @author PhotoTransform Team
  * @see SeedreamImageService
@@ -59,10 +59,10 @@ public class SeedreamImageServiceImpl implements SeedreamImageService {
     private ArkService arkService;
 
     /**
-     * 初始化 ArkService
+     * 初始化 ArkService 客户端。
      *
-     * 使用配置中的 API Key 和 Base URL 初始化火山引擎 SDK 客户端。
-     * 配置连接池和调度器以优化性能。
+     * <p>使用配置中的 API Key 和 Base URL 初始化火山引擎 SDK 客户端。
+     * 配置连接池和调度器以优化性能。</p>
      */
     @PostConstruct
     public void init() {
@@ -83,9 +83,9 @@ public class SeedreamImageServiceImpl implements SeedreamImageService {
     }
 
     /**
-     * 验证配置有效性
+     * 验证配置有效性。
      *
-     * 检查必要的配置项是否已正确配置。
+     * <p>检查必要的配置项是否已正确配置。</p>
      *
      * @throws BusinessException 当配置无效时抛出异常
      */
@@ -148,9 +148,9 @@ public class SeedreamImageServiceImpl implements SeedreamImageService {
     }
 
     /**
-     * 验证请求参数
+     * 验证请求参数。
      *
-     * 验证请求中的各个参数是否符合要求。
+     * <p>验证请求中的各个参数是否符合要求。</p>
      *
      * @param request 生成请求
      * @throws BusinessException 当参数验证失败时抛出
@@ -197,9 +197,9 @@ public class SeedreamImageServiceImpl implements SeedreamImageService {
     }
 
     /**
-     * 确定生成能力
+     * 确定生成能力。
      *
-     * 根据请求参数自动识别应使用的生成能力。
+     * <p>根据请求参数自动识别应使用的生成能力。</p>
      *
      * @param request 生成请求
      * @return 识别到的生成能力
@@ -240,9 +240,9 @@ public class SeedreamImageServiceImpl implements SeedreamImageService {
     }
 
     /**
-     * 验证能力与请求是否匹配
+     * 验证能力与请求是否匹配。
      *
-     * 验证显式指定的生成能力与请求参数是否匹配。
+     * <p>验证显式指定的生成能力与请求参数是否匹配。</p>
      *
      * @param request    生成请求
      * @param capability 指定的生成能力
@@ -274,9 +274,9 @@ public class SeedreamImageServiceImpl implements SeedreamImageService {
     }
 
     /**
-     * 执行图像生成
+     * 执行图像生成。
      *
-     * 调用 SDK 执行实际的图像生成操作。
+     * <p>调用 SDK 执行实际的图像生成操作。</p>
      *
      * @param request    生成请求
      * @param capability 使用的生成能力
@@ -306,9 +306,9 @@ public class SeedreamImageServiceImpl implements SeedreamImageService {
     }
 
     /**
-     * 构建 SDK 请求
+     * 构建 SDK 请求。
      *
-     * 将应用层的请求对象转换为 SDK 请求对象。
+     * <p>将应用层的请求对象转换为 SDK 请求对象。</p>
      *
      * @param request    应用层请求
      * @param capability 使用的生成能力
@@ -349,9 +349,9 @@ public class SeedreamImageServiceImpl implements SeedreamImageService {
     }
 
     /**
-     * 转换 SDK 响应为结果 DTO
+     * 转换 SDK 响应为结果 DTO。
      *
-     * 将 SDK 返回的响应对象转换为应用层的结果 DTO。
+     * <p>将 SDK 返回的响应对象转换为应用层的结果 DTO。</p>
      *
      * @param response   SDK 响应
      * @param request    原始请求
@@ -406,9 +406,9 @@ public class SeedreamImageServiceImpl implements SeedreamImageService {
     }
 
     /**
-     * 构建错误结果
+     * 构建错误结果。
      *
-     * 当生成失败时，构建包含错误信息的结果对象。
+     * <p>当生成失败时，构建包含错误信息的结果对象。</p>
      *
      * @param request     原始请求
      * @param taskId      任务ID
@@ -434,9 +434,9 @@ public class SeedreamImageServiceImpl implements SeedreamImageService {
     }
 
     /**
-     * 生成任务ID
+     * 生成任务ID。
      *
-     * 生成唯一的任务标识符。
+     * <p>生成唯一的任务标识符。</p>
      *
      * @return 任务ID，格式：SD + 16位大写字母数字
      */
@@ -447,9 +447,9 @@ public class SeedreamImageServiceImpl implements SeedreamImageService {
     // ==================== 配置获取方法 ====================
 
     /**
-     * 获取模型名称
+     * 获取模型名称。
      *
-     * 优先使用请求中指定的模型，否则使用配置中的默认模型。
+     * <p>优先使用请求中指定的模型，否则使用配置中的默认模型。</p>
      *
      * @param request 生成请求
      * @return 模型名称
@@ -459,9 +459,9 @@ public class SeedreamImageServiceImpl implements SeedreamImageService {
     }
 
     /**
-     * 获取图像尺寸
+     * 获取图像尺寸。
      *
-     * 优先使用请求中指定的尺寸，否则使用配置中的默认尺寸。
+     * <p>优先使用请求中指定的尺寸，否则使用配置中的默认尺寸。</p>
      *
      * @param request 生成请求
      * @return 图像尺寸
@@ -471,9 +471,9 @@ public class SeedreamImageServiceImpl implements SeedreamImageService {
     }
 
     /**
-     * 获取响应格式
+     * 获取响应格式。
      *
-     * 优先使用请求中指定的格式，否则使用配置中的默认格式。
+     * <p>优先使用请求中指定的格式，否则使用配置中的默认格式。</p>
      *
      * @param request 生成请求
      * @return 响应格式（"url" 或 "b64_json"）
@@ -486,9 +486,9 @@ public class SeedreamImageServiceImpl implements SeedreamImageService {
     }
 
     /**
-     * 获取水印设置
+     * 获取水印设置。
      *
-     * 优先使用请求中指定的设置，否则使用配置中的默认设置。
+     * <p>优先使用请求中指定的设置，否则使用配置中的默认设置。</p>
      *
      * @param request 生成请求
      * @return 是否开启水印

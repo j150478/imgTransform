@@ -7,25 +7,25 @@ import com.phototransform.enums.GenerationCapability;
 import java.util.List;
 
 /**
- * 火山引擎 Seedream 图像生成服务接口
+ * 火山引擎 Seedream 图像生成服务接口。
  *
  * <p>基于 doubao-seedream-4.5 模型，支持以下生成能力：</p>
  *
- * <h3>单图生成（sequential_image_generation=disabled）</h3>
+ * <p><strong>单图生成（sequential_image_generation=disabled）</strong></p>
  * <ul>
  *   <li>文生图：根据文本描述生成单张图像</li>
  *   <li>单图生图：基于1张参考图生成单张图像</li>
  *   <li>多图生图：融合2-14张参考图生成单张图像</li>
  * </ul>
  *
- * <h3>组图生成（sequential_image_generation=auto）</h3>
+ * <p><strong>组图生成（sequential_image_generation=auto）</strong></p>
  * <ul>
  *   <li>文生组图：根据文本描述生成多张关联图像</li>
  *   <li>单图生组图：基于1张参考图生成多张图像（最多14张）</li>
  *   <li>多图生组图：融合2-14张参考图生成组图</li>
  * </ul>
  *
- * <h3>约束条件</h3>
+ * <p><strong>约束条件</strong></p>
  * <ul>
  *   <li>参考图数量限制：0（文生图）、1（单图生图）、2-14（多图生图）</li>
  *   <li>组图总数限制：输入参考图数量 + 生成图片数量 ≤ 15</li>
@@ -41,11 +41,11 @@ import java.util.List;
 public interface SeedreamImageService {
 
     /**
-     * 通用图像生成方法
+     * 通用图像生成方法。
      *
-     * <p>根据请求参数自动判断生成能力，支持所有 doubao-seedream-4.5 模型能力：</p>
+     * <p>根据请求参数自动判断生成能力，支持所有 doubao-seedream-4.5 模型能力。</p>
      *
-     * <h3>自动识别逻辑</h3>
+     * <p><strong>自动识别逻辑</strong></p>
      * <ol>
      *   <li>判断参考图数量：
      *     <ul>
@@ -58,12 +58,12 @@ public interface SeedreamImageService {
      *     <ul>
      *       <li>request.getMode() == SINGLE → 单图生成</li>
      *       <li>request.getMode() == SEQUENTIAL → 组图生成</li>
-     *       <li>未指定时根据 request.getN() 判断（N > 1 则组图）</li>
+     *       <li>未指定时根据 request.getN() 判断（N {@literal >} 1 则组图）</li>
      *     </ul>
      *   </li>
      * </ol>
      *
-     * <h3>示例用法</h3>
+     * <p><strong>示例用法</strong></p>
      * <pre>{@code
      * // 文生图
      * ImageGenerationRequest request = ImageGenerationRequest.builder()
@@ -97,22 +97,21 @@ public interface SeedreamImageService {
     ImageGenerationResult generate(ImageGenerationRequest request);
 
     /**
-     * 指定生成能力的图像生成
+     * 指定生成能力的图像生成。
      *
      * <p>显式指定使用哪种 doubao-seedream-4.5 生成能力，适用于需要精确控制生成方式的场景。</p>
      *
-     * <h3>支持的生成能力</h3>
-     * <table border="1">
-     *   <tr><th>能力</th><th>参考图数量</th><th>生成模式</th><th>说明</th></tr>
-     *   <tr><td>TEXT_TO_IMAGE</td><td>0</td><td>SINGLE</td><td>文生图</td></tr>
-     *   <tr><td>TEXT_TO_IMAGE_SET</td><td>0</td><td>SEQUENTIAL</td><td>文生组图</td></tr>
-     *   <tr><td>SINGLE_IMAGE_TO_IMAGE</td><td>1</td><td>SINGLE</td><td>单图生图</td></tr>
-     *   <tr><td>SINGLE_IMAGE_TO_IMAGE_SET</td><td>1</td><td>SEQUENTIAL</td><td>单图生组图</td></tr>
-     *   <tr><td>MULTI_IMAGE_TO_IMAGE</td><td>2-14</td><td>SINGLE</td><td>多图生图</td></tr>
-     *   <tr><td>MULTI_IMAGE_TO_IMAGE_SET</td><td>2-14</td><td>SEQUENTIAL</td><td>多图生组图</td></tr>
-     * </table>
+     * <p><strong>支持的生成能力</strong></p>
+     * <ul>
+     *   <li>TEXT_TO_IMAGE - 参考图数量：0，生成模式：SINGLE，说明：文生图</li>
+     *   <li>TEXT_TO_IMAGE_SET - 参考图数量：0，生成模式：SEQUENTIAL，说明：文生组图</li>
+     *   <li>SINGLE_IMAGE_TO_IMAGE - 参考图数量：1，生成模式：SINGLE，说明：单图生图</li>
+     *   <li>SINGLE_IMAGE_TO_IMAGE_SET - 参考图数量：1，生成模式：SEQUENTIAL，说明：单图生组图</li>
+     *   <li>MULTI_IMAGE_TO_IMAGE - 参考图数量：2-14，生成模式：SINGLE，说明：多图生图</li>
+     *   <li>MULTI_IMAGE_TO_IMAGE_SET - 参考图数量：2-14，生成模式：SEQUENTIAL，说明：多图生组图</li>
+     * </ul>
      *
-     * <h3>示例用法</h3>
+     * <p><strong>示例用法</strong></p>
      * <pre>{@code
      * // 明确使用多图生图能力（融合多张参考图生成单张图片）
      * ImageGenerationRequest request = ImageGenerationRequest.builder()
@@ -149,7 +148,7 @@ public interface SeedreamImageService {
     ImageGenerationResult generateWithCapability(ImageGenerationRequest request, GenerationCapability capability);
 
     /**
-     * 单图生成（简化方法）
+     * 单图生成（简化方法）。
      *
      * <p>便捷方法，用于快速生成单张图片。</p>
      *
@@ -168,7 +167,7 @@ public interface SeedreamImageService {
     }
 
     /**
-     * 组图生成（简化方法）
+     * 组图生成（简化方法）。
      *
      * <p>便捷方法，用于快速生成组图。</p>
      *
