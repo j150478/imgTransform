@@ -259,6 +259,7 @@ public class ImageGenerationRequest {
      */
     @Min(value = 10000, message = "超时时间至少10秒")
     @Max(value = 300000, message = "超时时间最多5分钟")
+    @Builder.Default
     private Long timeout = 60000L;
 
     /**
