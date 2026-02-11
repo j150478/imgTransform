@@ -6,45 +6,36 @@ import org.springframework.stereotype.Component;
 
 /**
  * 火山引擎 Seedream 客户端配置
- *
- * 配置 Doubao Seedream 图像生成模型 API 的连接参数
- * 通过 application.yml 中的 seedream 前缀进行配置
  */
 @Data
 @Component
 @ConfigurationProperties(prefix = "seedream")
 public class SeedreamClientConfig {
 
-    /**
-     * 火山引擎 API 访问密钥 ID
-     * 用于身份验证，从火山引擎控制台获取
-     */
-    private String accessKeyId;
+    /** API Key，建议从环境变量 ARK_API_KEY 读取 */
+    private String apiKey;
 
-    /**
-     * 火山引擎 API 访问密钥 Secret
-     * 用于身份验证，从火山引擎控制台获取
-     */
-    private String accessKeySecret;
+    /** Base URL，默认: https://ark.cn-beijing.volces.com/api/v3 */
+    private String baseUrl = "https://ark.cn-beijing.volces.com/api/v3";
 
-    /**
-     * API 端点地址
-     * 火山引擎 Seedream 服务的服务地址
-     * 默认值为：seedream.volces.com
-     */
-    private String endpoint = "seedream.volces.com";
+    /** 默认模型，默认: doubao-seedream-4-5-251128 */
+    private String modelName = "doubao-seedream-4-5-251128";
 
-    /**
-     * 连接超时时间（毫秒）
-     * 建立连接的最大等待时间
-     * 默认值为 10000 毫秒（10秒）
-     */
+    /** 默认图像尺寸，默认: 1024x1024 */
+    private String defaultSize = "1024x1024";
+
+    /** 默认响应格式: url 或 b64_json，默认: url */
+    private String defaultResponseFormat = "url";
+
+    /** 连接超时（毫秒），默认: 10000 */
     private Integer connectionTimeout = 10000;
 
-    /**
-     * 读取超时时间（毫秒）
-     * 等待响应的最大等待时间
-     * 默认值为 60000 毫秒（60秒）
-     */
+    /** 读取超时（毫秒），默认: 60000 */
     private Integer readTimeout = 60000;
+
+    /** 是否开启水印，默认: false */
+    private Boolean defaultWatermark = false;
+
+    /** 组图生成模式: auto 或 disabled，默认: disabled */
+    private String defaultSequentialGeneration = "disabled";
 }

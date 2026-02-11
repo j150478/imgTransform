@@ -43,13 +43,15 @@ logging:
 # 注意：开发环境可以使用测试密钥，生产环境必须从环境变量读取
 seedream:
   # 开发环境测试密钥（请替换为实际测试密钥）
-  access-key-id: ${SEEDREAM_ACCESS_KEY_ID:test-key-id}
-  access-key-secret: ${SEEDREAM_ACCESS_KEY_SECRET:test-key-secret}
+  access-key-id: ${ARK_API_KEY}
+  access-key-secret: ${SEEDREAM_ACCESS_KEY_SECRET}
   # 使用测试环境端点
-  endpoint: seedream.volces.com
+  baseUrl: "https://ark.cn-beijing.volces.com/api/v3"
+  modelName: "doubao-seedream-4-5-251128"
   # 开发环境缩短超时便于调试
   connection-timeout: 5000
   read-timeout: 30000
+  prompt: "充满活力的特写编辑肖像，模特眼神犀利，头戴雕塑感帽子，色彩拼接丰富，眼部焦点锐利，景深较浅，具有Vogue杂志封面的美学风格，采用中画幅拍摄，工作室灯光效果强烈。"
 
 # 应用自定义配置（开发模式）
 app:

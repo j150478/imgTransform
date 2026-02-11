@@ -22,10 +22,6 @@ public class AppConfig {
     // 用于上传和下载图片
     // 如阿里云 OSS、腾讯云 COS、AWS S3 等
 
-    // TODO: 配置火山引擎 Doubao Seedream 客户端
-    // 用于调用图像生成 API
-    // 需要配置 API Key、Endpoint 等
-
     // TODO: 配置缓存
     // 用于缓存任务状态，减少数据库查询
     // 如 Redis、Caffeine 等

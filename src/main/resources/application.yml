@@ -50,7 +50,7 @@ logging:
 # 火山引擎 Seedream 配置
 seedream:
   # API 访问密钥（从环境变量或配置中心读取，生产环境禁止硬编码）
-  access-key-id: ${SEEDREAM_ACCESS_KEY_ID:}
+  access-key-id: ${ARK_API_KEY}
   access-key-secret: ${SEEDREAM_ACCESS_KEY_SECRET:}
   # API 端点
   endpoint: seedream.volces.com
