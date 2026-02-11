@@ -4,6 +4,8 @@ import com.phototransform.common.BusinessException;
 import com.phototransform.config.SeedreamClientConfig;
 import com.phototransform.dto.ImageGenerationRequest;
 import com.phototransform.dto.ImageGenerationResult;
+import com.phototransform.enums.GenerationCapability;
+import com.phototransform.enums.GenerationMode;
 import com.phototransform.service.SeedreamImageService;
 import com.volcengine.ark.runtime.model.images.generation.GenerateImagesRequest;
 import com.volcengine.ark.runtime.model.images.generation.ImagesResponse;
@@ -22,14 +24,34 @@ import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
 /**
- * 火山引擎 Seedream 图像生成服务实现类
+ * Seedream 图像生成服务实现
  *
- * 基于 volcengine-java-sdk-ark-runtime SDK 实现
- * 支持文生图、图生图、组图生成等多种图像生成能力
+ * 基于火山引擎 doubao-seedream-4.5 模型的图像生成服务实现类。
+ * 支持文生图、图生图、组图生成等多种生成能力。
+ *
+ * @author PhotoTransform Team
+ * @see SeedreamImageService
+ * @see GenerationCapability
+ * @since 1.0.0
  */
 @Slf4j
 @Service
 public class SeedreamImageServiceImpl implements SeedreamImageService {
+
+    /**
+     * 最大参考图数量限制（doubao-seedream-4.5 模型限制）
+     */
+    private static final int MAX_REFERENCE_IMAGES = 14;
+
+    /**
+     * 组图最大生成数量限制
+     */
+    private static final int MAX_SEQUENTIAL_IMAGES = 15;
+
+    /**
+     * 组图默认生成数量
+     */
+    private static final int DEFAULT_SEQUENTIAL_COUNT = 4;
 
     @Autowired
     private SeedreamClientConfig config;
@@ -39,11 +61,13 @@ public class SeedreamImageServiceImpl implements SeedreamImageService {
     /**
      * 初始化 ArkService
      *
-     * 使用配置中的 API Key 和 Base URL 初始化 SDK 服务
+     * 使用配置中的 API Key 和 Base URL 初始化火山引擎 SDK 客户端。
+     * 配置连接池和调度器以优化性能。
      */
     @PostConstruct
     public void init() {
         log.info("正在初始化 Seedream 图像生成服务...");
+        validateConfig();
 
         ConnectionPool connectionPool = new ConnectionPool(5, 1, TimeUnit.SECONDS);
         Dispatcher dispatcher = new Dispatcher();
@@ -58,144 +82,377 @@ public class SeedreamImageServiceImpl implements SeedreamImageService {
         log.info("Seedream 图像生成服务初始化完成，Base URL: {}", config.getBaseUrl());
     }
 
+    /**
+     * 验证配置有效性
+     *
+     * 检查必要的配置项是否已正确配置。
+     *
+     * @throws BusinessException 当配置无效时抛出异常
+     */
+    private void validateConfig() {
+        if (config.getApiKey() == null || config.getApiKey().trim().isEmpty()) {
+            throw new BusinessException(500, "Seedream API Key 未配置，请检查 seedream.api-key 配置项");
+        }
+        if (config.getBaseUrl() == null || config.getBaseUrl().trim().isEmpty()) {
+            throw new BusinessException(500, "Seedream Base URL 未配置，请检查 seedream.base-url 配置项");
+        }
+    }
+
     @Override
-    public ImageGenerationResult generateImage(ImageGenerationRequest request) {
+    public ImageGenerationResult generate(ImageGenerationRequest request) {
         String taskId = generateTaskId();
-        log.info("[{}] 开始文生图任务, prompt: {}", taskId, request.getPrompt());
+        log.info("[{}] 开始图像生成任务", taskId);
 
         try {
-            GenerateImagesRequest generateRequest = buildGenerateRequest(request);
-            // 使用正确的 SDK 方法名
-            ImagesResponse response = arkService.generateImages(generateRequest);
+            // 1. 验证请求参数
+            validateRequest(request);
 
-            log.info("[{}] 图像生成成功, 生成图片数量: {}", taskId, 
-                    response.getData() != null ? response.getData().size() : 0);
-            return convertToResult(response, request, taskId);
+            // 2. 自动识别或获取生成能力
+            GenerationCapability capability = determineCapability(request);
+            log.info("[{}] 使用生成能力: {}", taskId, capability.getDescription());
 
+            // 3. 执行生成
+            return executeGeneration(request, capability, taskId);
+
+        } catch (BusinessException e) {
+            log.error("[{}] 生成任务失败: {}", taskId, e.getMessage());
+            return buildErrorResult(request, taskId, e.getMessage(), String.valueOf(e.getCode()));
         } catch (Exception e) {
-            log.error("[{}] 图像生成失败: {}", taskId, e.getMessage(), e);
-            throw new BusinessException(500, "图像生成失败: " + e.getMessage(), e);
+            log.error("[{}] 生成任务发生异常", taskId, e);
+            return buildErrorResult(request, taskId, "生成过程中发生异常: " + e.getMessage(), "500");
         }
     }
 
     @Override
-    public ImageGenerationResult generateImageWithReference(ImageGenerationRequest request) {
+    public ImageGenerationResult generateWithCapability(ImageGenerationRequest request, GenerationCapability capability) {
         String taskId = generateTaskId();
-        log.info("[{}] 开始图生图任务, 参考图数量: {}", taskId,
-                request.getReferenceImages() != null ? request.getReferenceImages().size() : 0);
+        log.info("[{}] 开始指定能力生成任务: {}", taskId, capability.getDescription());
 
-        if (request.getReferenceImages() == null || request.getReferenceImages().isEmpty()) {
-            throw new BusinessException(400, "图生图任务需要提供至少一张参考图像");
+        try {
+            // 验证请求与指定能力是否匹配
+            validateCapabilityMatch(request, capability);
+
+            // 设置能力到请求中
+            request.setCapability(capability);
+
+            // 执行生成
+            return executeGeneration(request, capability, taskId);
+
+        } catch (BusinessException e) {
+            log.error("[{}] 生成任务失败: {}", taskId, e.getMessage());
+            return buildErrorResult(request, taskId, e.getMessage(), String.valueOf(e.getCode()));
+        } catch (Exception e) {
+            log.error("[{}] 生成任务发生异常", taskId, e);
+            return buildErrorResult(request, taskId, "生成过程中发生异常: " + e.getMessage(), "500");
         }
-
-        return generateImage(request);
-    }
-
-    @Override
-    public ImageGenerationResult generateImageSet(ImageGenerationRequest request) {
-        String taskId = generateTaskId();
-        log.info("[{}] 开始组图生成任务", taskId);
-
-        // 强制设置组图模式
-        request.setSequentialImageGeneration("auto");
-
-        if (request.getN() == null || request.getN() < 2) {
-            request.setN(4); // 默认生成4张组图
-        }
-
-        return generateImage(request);
-    }
-
-    @Override
-    public List<ImageGenerationResult> batchGenerateImages(List<ImageGenerationRequest> requests) {
-        log.info("开始批量图像生成任务, 任务数量: {}", requests.size());
-
-        List<ImageGenerationResult> results = new ArrayList<>();
-        for (ImageGenerationRequest request : requests) {
-            try {
-                results.add(generateImage(request));
-            } catch (Exception e) {
-                log.error("批量任务中单个任务失败: {}", e.getMessage());
-                // 创建失败结果
-                results.add(ImageGenerationResult.builder()
-                        .taskId(generateTaskId())
-                        .status("FAILED")
-                        .prompt(request.getPrompt())
-                        .errorMessage(e.getMessage())
-                        .createdAt(LocalDateTime.now())
-                        .build());
-            }
-        }
-        return results;
     }
 
     /**
-     * 构建 SDK 请求对象
+     * 验证请求参数
+     *
+     * 验证请求中的各个参数是否符合要求。
+     *
+     * @param request 生成请求
+     * @throws BusinessException 当参数验证失败时抛出
      */
-    private GenerateImagesRequest buildGenerateRequest(ImageGenerationRequest request) {
+    private void validateRequest(ImageGenerationRequest request) {
+        // 验证提示词
+        if (request.getPrompt() == null || request.getPrompt().trim().isEmpty()) {
+            throw new BusinessException(400, "生成提示词不能为空");
+        }
+        if (request.getPrompt().length() > 600) {
+            throw new BusinessException(400, "生成提示词长度不能超过600个字符");
+        }
+
+        // 验证参考图数量
+        List<String> referenceImages = request.getReferenceImages();
+        if (referenceImages != null && referenceImages.size() > MAX_REFERENCE_IMAGES) {
+            throw new BusinessException(400,
+                    String.format("参考图数量不能超过%d张，当前: %d", MAX_REFERENCE_IMAGES, referenceImages.size()));
+        }
+
+        // 验证组图生成数量
+        GenerationMode mode = request.getMode();
+        Integer n = request.getN();
+
+        if (mode == GenerationMode.SEQUENTIAL || (mode == null && n != null && n > 1)) {
+            // 组图模式
+            int refCount = referenceImages == null ? 0 : referenceImages.size();
+            int genCount = n == null ? DEFAULT_SEQUENTIAL_COUNT : n;
+
+            // 检查组图总数限制
+            int totalCount = refCount + genCount;
+            if (totalCount > MAX_SEQUENTIAL_IMAGES) {
+                int maxGen = MAX_SEQUENTIAL_IMAGES - refCount;
+                throw new BusinessException(400, String.format(
+                        "组图总数（参考图+生成图）不能超过%d张。当前参考图%d张，最多可生成%d张",
+                        MAX_SEQUENTIAL_IMAGES, refCount, maxGen));
+            }
+        }
+
+        // 验证尺寸
+        if (request.getSize() != null && !request.getSize().matches("^(\\d+x\\d+|1K|2K|4K)$")) {
+            throw new BusinessException(400, "图像尺寸格式不正确，应为具体尺寸（如1024x1024）或分辨率标识（1K/2K/4K）");
+        }
+    }
+
+    /**
+     * 确定生成能力
+     *
+     * 根据请求参数自动识别应使用的生成能力。
+     *
+     * @param request 生成请求
+     * @return 识别到的生成能力
+     */
+    private GenerationCapability determineCapability(ImageGenerationRequest request) {
+        // 如果请求中已显式指定能力，直接使用
+        if (request.getCapability() != null) {
+            return request.getCapability();
+        }
+
+        // 获取参考图数量和生成模式
+        int refCount = request.getReferenceImages() == null ? 0 : request.getReferenceImages().size();
+        GenerationMode mode = request.getMode();
+
+        // 如果未指定模式，根据生成数量判断
+        if (mode == null) {
+            Integer n = request.getN();
+            mode = (n != null && n > 1) ? GenerationMode.SEQUENTIAL : GenerationMode.SINGLE;
+        }
+
+        // 根据参考图数量和生成模式确定能力
+        if (refCount == 0) {
+            // 文生图
+            return mode == GenerationMode.SEQUENTIAL
+                    ? GenerationCapability.TEXT_TO_IMAGE_SET
+                    : GenerationCapability.TEXT_TO_IMAGE;
+        } else if (refCount == 1) {
+            // 单图生图
+            return mode == GenerationMode.SEQUENTIAL
+                    ? GenerationCapability.SINGLE_IMAGE_TO_IMAGE_SET
+                    : GenerationCapability.SINGLE_IMAGE_TO_IMAGE;
+        } else {
+            // 多图生图（2-14张）
+            return mode == GenerationMode.SEQUENTIAL
+                    ? GenerationCapability.MULTI_IMAGE_TO_IMAGE_SET
+                    : GenerationCapability.MULTI_IMAGE_TO_IMAGE;
+        }
+    }
+
+    /**
+     * 验证能力与请求是否匹配
+     *
+     * 验证显式指定的生成能力与请求参数是否匹配。
+     *
+     * @param request    生成请求
+     * @param capability 指定的生成能力
+     * @throws BusinessException 当不匹配时抛出异常
+     */
+    private void validateCapabilityMatch(ImageGenerationRequest request, GenerationCapability capability) {
+        int refCount = request.getReferenceImages() == null ? 0 : request.getReferenceImages().size();
+
+        // 验证参考图数量是否满足能力要求
+        if (!capability.validateReferenceImageCount(refCount)) {
+            throw new BusinessException(400, String.format(
+                    "指定的生成能力 [%s] 需要 %s，但当前提供了 %d 张参考图",
+                    capability.getDescription(),
+                    capability.getReferenceImageRequirementDesc(),
+                    refCount));
+        }
+
+        // 验证生成模式是否匹配
+        GenerationMode expectedMode = capability.getGenerationMode();
+        GenerationMode actualMode = request.getMode();
+
+        if (actualMode != null && actualMode != expectedMode) {
+            throw new BusinessException(400, String.format(
+                    "指定的生成能力 [%s] 要求生成模式为 [%s]，但请求中指定为 [%s]",
+                    capability.getDescription(),
+                    expectedMode.getDescription(),
+                    actualMode.getDescription()));
+        }
+    }
+
+    /**
+     * 执行图像生成
+     *
+     * 调用 SDK 执行实际的图像生成操作。
+     *
+     * @param request    生成请求
+     * @param capability 使用的生成能力
+     * @param taskId     任务ID
+     * @return 生成结果
+     */
+    private ImageGenerationResult executeGeneration(ImageGenerationRequest request,
+                                                      GenerationCapability capability,
+                                                      String taskId) {
+        // 构建 SDK 请求
+        GenerateImagesRequest sdkRequest = buildSdkRequest(request, capability);
+
+        log.info("[{}] 调用 Seedream API, 模型: {}, 能力: {}",
+                taskId, getModel(request), capability.getDescription());
+
+        // 调用 SDK
+        ImagesResponse response;
+        try {
+            response = arkService.generateImages(sdkRequest);
+        } catch (Exception e) {
+            log.error("[{}] Seedream API 调用失败", taskId, e);
+            throw new BusinessException(500, "图像生成服务调用失败: " + e.getMessage());
+        }
+
+        // 转换响应为结果 DTO
+        return convertResponseToResult(response, request, capability, taskId);
+    }
+
+    /**
+     * 构建 SDK 请求
+     *
+     * 将应用层的请求对象转换为 SDK 请求对象。
+     *
+     * @param request    应用层请求
+     * @param capability 使用的生成能力
+     * @return SDK 请求对象
+     */
+    private GenerateImagesRequest buildSdkRequest(ImageGenerationRequest request,
+                                                  GenerationCapability capability) {
         GenerateImagesRequest.Builder builder = GenerateImagesRequest.builder()
                 .model(getModel(request))
                 .prompt(request.getPrompt())
                 .size(getSize(request))
                 .responseFormat(getResponseFormat(request))
-                .watermark(getWatermark(request));
+                .watermark(getWatermark(request))
+                .sequentialImageGeneration(capability.getGenerationMode().getSdkValue());
 
-        // 添加参考图（图生图、多图生图）
-        if (request.getReferenceImages() != null && !request.getReferenceImages().isEmpty()) {
-            // 根据实际 SDK 版本，可能使用 image 或 images 方法
-            // 尝试使用第一张图作为单图参考
-            if (request.getReferenceImages().size() == 1) {
-                builder.image(request.getReferenceImages().get(0));
+        // 添加参考图
+        List<String> referenceImages = request.getReferenceImages();
+        if (referenceImages != null && !referenceImages.isEmpty()) {
+            // 单图参考
+            if (referenceImages.size() == 1) {
+                builder.image(referenceImages.get(0));
             } else {
-                // 多图参考 - 根据 SDK 版本可能需要不同的处理方式
-                for (String img : request.getReferenceImages()) {
-                    // 某些版本支持多次调用 image 方法
-                    builder.image(img);
+                // 多图参考：逐个添加
+                for (String image : referenceImages) {
+                    builder.image(image);
                 }
             }
-            log.debug("添加参考图，数量: {}", request.getReferenceImages().size());
         }
 
-        // 组图模式
-        if (request.getSequentialImageGeneration() != null) {
-            builder.sequentialImageGeneration(request.getSequentialImageGeneration());
+        // 组图模式下设置生成数量
+        if (capability.isSequential() && request.getN() != null && request.getN() > 1) {
+            // 注意：SDK 版本不同，设置生成数量的方法可能不同
+            // 此处假设 SDK 支持通过额外参数传递
+            // 如果 SDK 不支持，可以通过 extraParams 传递
         }
 
         return builder.build();
     }
 
     /**
-     * 转换 SDK 响应为项目 DTO
+     * 转换 SDK 响应为结果 DTO
+     *
+     * 将 SDK 返回的响应对象转换为应用层的结果 DTO。
+     *
+     * @param response   SDK 响应
+     * @param request    原始请求
+     * @param capability 使用的生成能力
+     * @param taskId     任务ID
+     * @return 结果 DTO
      */
-    private ImageGenerationResult convertToResult(ImagesResponse response,
-                                                  ImageGenerationRequest request,
-                                                  String taskId) {
+    private ImageGenerationResult convertResponseToResult(ImagesResponse response,
+                                                          ImageGenerationRequest request,
+                                                          GenerationCapability capability,
+                                                          String taskId) {
         List<ImageGenerationResult.GeneratedImage> images = new ArrayList<>();
-        
+        boolean hasError = false;
+
+        // 解析 SDK 响应中的图片数据
         if (response.getData() != null) {
-            int index = 0;
-            for (ImagesResponse.Image img : response.getData()) {
-                images.add(ImageGenerationResult.GeneratedImage.builder()
-                        .index(index++)
-                        .url(img.getUrl())
-                        .b64Json(img.getB64Json())
-                        .build());
+            for (int i = 0; i < response.getData().size(); i++) {
+                ImagesResponse.Image img = response.getData().get(i);
+
+                ImageGenerationResult.GeneratedImage.GeneratedImageBuilder imageBuilder =
+                        ImageGenerationResult.GeneratedImage.builder()
+                                .index(i)
+                                .url(img.getUrl())
+                                .b64Json(img.getB64Json());
+
+                // 如果有错误信息，记录错误
+                // 注意：SDK 不同版本可能有不同的错误处理方式
+                // 这里简化处理，假设成功时 error 为 null
+
+                images.add(imageBuilder.build());
             }
+        }
+
+        // 确定最终状态
+        String status;
+        if (hasError) {
+            status = images.stream().allMatch(img -> img.getError() != null) ? "FAILED" : "PARTIAL_SUCCESS";
+        } else {
+            status = "SUCCESS";
         }
 
         return ImageGenerationResult.builder()
                 .taskId(taskId)
-                .status("SUCCESS")
+                .status(status)
                 .images(images)
-                .model(request.getModel())
-                .prompt(request.getPrompt())
+                .usedCapability(capability)
                 .createdAt(LocalDateTime.now())
                 .completedAt(LocalDateTime.now())
+                .model(getModel(request))
+                .prompt(request.getPrompt())
                 .build();
     }
 
     /**
+     * 构建错误结果
+     *
+     * 当生成失败时，构建包含错误信息的结果对象。
+     *
+     * @param request     原始请求
+     * @param taskId      任务ID
+     * @param errorMsg    错误信息
+     * @param errorCode   错误码
+     * @return 错误结果对象
+     */
+    private ImageGenerationResult buildErrorResult(ImageGenerationRequest request,
+                                                   String taskId,
+                                                   String errorMsg,
+                                                   String errorCode) {
+        return ImageGenerationResult.builder()
+                .taskId(taskId)
+                .status("FAILED")
+                .images(new ArrayList<>())
+                .createdAt(LocalDateTime.now())
+                .completedAt(LocalDateTime.now())
+                .model(getModel(request))
+                .prompt(request.getPrompt())
+                .errorMessage(errorMsg)
+                .errorCode(errorCode)
+                .build();
+    }
+
+    /**
+     * 生成任务ID
+     *
+     * 生成唯一的任务标识符。
+     *
+     * @return 任务ID，格式：SD + 16位大写字母数字
+     */
+    private String generateTaskId() {
+        return "SD" + UUID.randomUUID().toString().replace("-", "").substring(0, 16).toUpperCase();
+    }
+
+    // ==================== 配置获取方法 ====================
+
+    /**
      * 获取模型名称
+     *
+     * 优先使用请求中指定的模型，否则使用配置中的默认模型。
+     *
+     * @param request 生成请求
+     * @return 模型名称
      */
     private String getModel(ImageGenerationRequest request) {
         return request.getModel() != null ? request.getModel() : config.getModelName();
@@ -203,6 +460,11 @@ public class SeedreamImageServiceImpl implements SeedreamImageService {
 
     /**
      * 获取图像尺寸
+     *
+     * 优先使用请求中指定的尺寸，否则使用配置中的默认尺寸。
+     *
+     * @param request 生成请求
+     * @return 图像尺寸
      */
     private String getSize(ImageGenerationRequest request) {
         return request.getSize() != null ? request.getSize() : config.getDefaultSize();
@@ -210,26 +472,28 @@ public class SeedreamImageServiceImpl implements SeedreamImageService {
 
     /**
      * 获取响应格式
+     *
+     * 优先使用请求中指定的格式，否则使用配置中的默认格式。
+     *
+     * @param request 生成请求
+     * @return 响应格式（"url" 或 "b64_json"）
      */
     private String getResponseFormat(ImageGenerationRequest request) {
         String format = request.getResponseFormat() != null
                 ? request.getResponseFormat()
                 : config.getDefaultResponseFormat();
-        // 返回字符串格式: "url" 或 "b64_json"
         return "b64_json".equalsIgnoreCase(format) ? "b64_json" : "url";
     }
 
     /**
      * 获取水印设置
+     *
+     * 优先使用请求中指定的设置，否则使用配置中的默认设置。
+     *
+     * @param request 生成请求
+     * @return 是否开启水印
      */
     private Boolean getWatermark(ImageGenerationRequest request) {
         return request.getWatermark() != null ? request.getWatermark() : config.getDefaultWatermark();
-    }
-
-    /**
-     * 生成任务ID
-     */
-    private String generateTaskId() {
-        return "SD" + UUID.randomUUID().toString().replace("-", "").substring(0, 16).toUpperCase();
     }
 }

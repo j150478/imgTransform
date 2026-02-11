@@ -1,7 +1,5 @@
 package com.phototransform.common;
 
-import lombok.Getter;
-
 /**
  * 业务异常类
  * 
@@ -12,7 +10,6 @@ import lombok.Getter;
  * throw new BusinessException(400, "请求参数错误");
  * throw new BusinessException(404, "任务不存在");
  */
-@Getter
 public class BusinessException extends RuntimeException {
 
     private static final long serialVersionUID = 1L;
@@ -51,5 +48,14 @@ public class BusinessException extends RuntimeException {
     public BusinessException(Integer code, String message, Throwable cause) {
         super(message, cause);
         this.code = code;
+    }
+
+    /**
+     * 获取错误码
+     * 
+     * @return 错误码
+     */
+    public Integer getCode() {
+        return code;
     }
 }

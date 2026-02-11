@@ -1,13 +1,11 @@
 package com.phototransform.config;
 
-import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.stereotype.Component;
 
 /**
  * 火山引擎 Seedream 客户端配置
  */
-@Data
 @Component
 @ConfigurationProperties(prefix = "seedream")
 public class SeedreamClientConfig {
@@ -38,4 +36,78 @@ public class SeedreamClientConfig {
 
     /** 组图生成模式: auto 或 disabled，默认: disabled */
     private String defaultSequentialGeneration = "disabled";
+
+    // ==================== Getter 方法 ====================
+
+    public String getApiKey() {
+        return apiKey;
+    }
+
+    public void setApiKey(String apiKey) {
+        this.apiKey = apiKey;
+    }
+
+    public String getBaseUrl() {
+        return baseUrl;
+    }
+
+    public void setBaseUrl(String baseUrl) {
+        this.baseUrl = baseUrl;
+    }
+
+    public String getModelName() {
+        return modelName;
+    }
+
+    public void setModelName(String modelName) {
+        this.modelName = modelName;
+    }
+
+    public String getDefaultSize() {
+        return defaultSize;
+    }
+
+    public void setDefaultSize(String defaultSize) {
+        this.defaultSize = defaultSize;
+    }
+
+    public String getDefaultResponseFormat() {
+        return defaultResponseFormat;
+    }
+
+    public void setDefaultResponseFormat(String defaultResponseFormat) {
+        this.defaultResponseFormat = defaultResponseFormat;
+    }
+
+    public Integer getConnectionTimeout() {
+        return connectionTimeout;
+    }
+
+    public void setConnectionTimeout(Integer connectionTimeout) {
+        this.connectionTimeout = connectionTimeout;
+    }
+
+    public Integer getReadTimeout() {
+        return readTimeout;
+    }
+
+    public void setReadTimeout(Integer readTimeout) {
+        this.readTimeout = readTimeout;
+    }
+
+    public Boolean getDefaultWatermark() {
+        return defaultWatermark;
+    }
+
+    public void setDefaultWatermark(Boolean defaultWatermark) {
+        this.defaultWatermark = defaultWatermark;
+    }
+
+    public String getDefaultSequentialGeneration() {
+        return defaultSequentialGeneration;
+    }
+
+    public void setDefaultSequentialGeneration(String defaultSequentialGeneration) {
+        this.defaultSequentialGeneration = defaultSequentialGeneration;
+    }
 }
