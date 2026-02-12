@@ -1,4 +1,4 @@
-package com.phototransform.domain.enums;
+package com.phototransform.enums;
 
 /**
  * 图像处理模型类型枚举

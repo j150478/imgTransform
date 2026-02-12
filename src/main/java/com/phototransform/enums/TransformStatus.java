@@ -1,4 +1,4 @@
-package com.phototransform.domain.enums;
+package com.phototransform.enums;
 
 /**
  * 证件照转化任务状态枚举

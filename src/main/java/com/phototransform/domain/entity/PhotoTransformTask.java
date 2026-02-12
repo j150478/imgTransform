@@ -1,10 +1,11 @@
 package com.phototransform.domain.entity;
 
-import com.phototransform.domain.enums.ModelType;
-import com.phototransform.domain.enums.TransformStatus;
-import lombok.Data;
-
 import java.time.LocalDateTime;
+
+import com.phototransform.enums.ModelType;
+import com.phototransform.enums.TransformStatus;
+
+import lombok.Data;
 
 /**
  * 证件照转化任务实体

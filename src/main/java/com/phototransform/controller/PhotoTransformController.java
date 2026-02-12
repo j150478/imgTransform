@@ -1,16 +1,23 @@
 package com.phototransform.controller;
 
+import javax.validation.constraints.NotBlank;
+
+import org.springframework.validation.annotation.Validated;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.ModelAttribute;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
+
 import com.phototransform.common.ApiResponse;
-import com.phototransform.domain.dto.PhotoTransformRequest;
-import com.phototransform.domain.dto.PhotoTransformResponse;
-import com.phototransform.domain.dto.PhotoTransformResultResponse;
+import com.phototransform.dto.PhotoTransformRequest;
+import com.phototransform.dto.PhotoTransformResponse;
+import com.phototransform.dto.PhotoTransformResultResponse;
 import com.phototransform.service.PhotoTransformService;
+
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.validation.annotation.Validated;
-import org.springframework.web.bind.annotation.*;
-
-import javax.validation.constraints.NotBlank;
 
 /**
  * 证件照转化 REST API 控制器

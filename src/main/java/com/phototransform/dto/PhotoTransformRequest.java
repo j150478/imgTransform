@@ -1,6 +1,6 @@
-package com.phototransform.domain.dto;
+package com.phototransform.dto;
 
-import com.phototransform.domain.enums.ModelType;
+import com.phototransform.enums.ModelType;
 import lombok.Data;
 import org.springframework.web.multipart.MultipartFile;
 

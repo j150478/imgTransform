@@ -1,9 +1,9 @@
 package com.phototransform.service;
 
-import com.phototransform.domain.dto.PhotoTransformRequest;
-import com.phototransform.domain.dto.PhotoTransformResponse;
-import com.phototransform.domain.dto.PhotoTransformResultResponse;
 import com.phototransform.domain.entity.PhotoTransformTask;
+import com.phototransform.dto.PhotoTransformRequest;
+import com.phototransform.dto.PhotoTransformResponse;
+import com.phototransform.dto.PhotoTransformResultResponse;
 
 /**
  * 照片转化服务接口

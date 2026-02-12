@@ -1,6 +1,6 @@
-package com.phototransform.domain.dto;
+package com.phototransform.dto;
 
-import com.phototransform.domain.enums.TransformStatus;
+import com.phototransform.enums.TransformStatus;
 import lombok.Data;
 
 /**

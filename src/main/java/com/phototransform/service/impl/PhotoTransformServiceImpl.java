@@ -1,12 +1,14 @@
 package com.phototransform.service.impl;
 
-import com.phototransform.domain.dto.PhotoTransformRequest;
-import com.phototransform.domain.dto.PhotoTransformResponse;
-import com.phototransform.domain.dto.PhotoTransformResultResponse;
-import com.phototransform.domain.entity.PhotoTransformTask;
-import com.phototransform.service.PhotoTransformService;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+
+import com.phototransform.domain.entity.PhotoTransformTask;
+import com.phototransform.dto.PhotoTransformRequest;
+import com.phototransform.dto.PhotoTransformResponse;
+import com.phototransform.dto.PhotoTransformResultResponse;
+import com.phototransform.service.PhotoTransformService;
+
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * 照片转化服务实现类
