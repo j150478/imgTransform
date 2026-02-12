@@ -4,8 +4,6 @@ import com.phototransform.dto.ImageGenerationRequest;
 import com.phototransform.dto.ImageGenerationResult;
 import com.phototransform.enums.GenerationCapability;
 
-import java.util.List;
-
 /**
  * 火山引擎 Seedream 图像生成服务接口。
  *

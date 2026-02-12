@@ -22,7 +22,7 @@ spring:
 
 # 服务器配置（开发模式使用不同端口）
 server:
-  port: 8080
+  port: 8081
   # 启用错误页面调试信息
   error:
     include-message: always
@@ -33,9 +33,9 @@ server:
 logging:
   level:
     root: DEBUG
-    com.phototransform: TRACE
-    org.springframework.web: DEBUG
-    org.hibernate.SQL: DEBUG
+    "[com.phototransform]": TRACE
+    "[org.springframework.web]": DEBUG
+    "[org.hibernate.SQL]": DEBUG
   pattern:
     console: "%clr(%d{yyyy-MM-dd HH:mm:ss.SSS}){faint} %clr([%thread]){magenta} %clr(%-5level) %clr(%logger{36}){cyan} - %msg%n"
 
