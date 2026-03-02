@@ -365,6 +365,8 @@ public class SeedreamImageServiceImpl implements SeedreamImageService {
                                                           String taskId) {
         List<ImageGenerationResult.GeneratedImage> images = new ArrayList<>();
         boolean hasError = false;
+        int successCount = 0;
+        int errorCount = 0;
 
         // 解析 SDK 响应中的图片数据
         if (response.getData() != null) {
@@ -373,13 +375,25 @@ public class SeedreamImageServiceImpl implements SeedreamImageService {
 
                 ImageGenerationResult.GeneratedImage.GeneratedImageBuilder imageBuilder =
                         ImageGenerationResult.GeneratedImage.builder()
-                                .index(i)
-                                .url(img.getUrl())
-                                .b64Json(img.getB64Json());
+                                .index(i);
 
-                // 如果有错误信息，记录错误
-                // 注意：SDK 不同版本可能有不同的错误处理方式
-                // 这里简化处理，假设成功时 error 为 null
+                // 检查图片是否生成失败
+                // 当 url 和 b64Json 均为 null 时，认为图片生成失败
+                boolean imageHasError = img.getUrl() == null && img.getB64Json() == null;
+
+                if (imageHasError) {
+                    hasError = true;
+                    errorCount++;
+                    // 记录错误信息
+                    imageBuilder.error("图片生成失败，未返回有效数据");
+                    // 失败的图片不设置 url 和 b64Json
+                    log.warn("[{}] 图片[{}]生成失败，未返回有效数据", taskId, i);
+                } else {
+                    successCount++;
+                    // 成功的图片设置 url 和 b64Json
+                    imageBuilder.url(img.getUrl())
+                               .b64Json(img.getB64Json());
+                }
 
                 images.add(imageBuilder.build());
             }
@@ -392,6 +406,10 @@ public class SeedreamImageServiceImpl implements SeedreamImageService {
         } else {
             status = "SUCCESS";
         }
+
+        // 记录生成结果统计
+        log.info("[{}] 生成任务完成，状态: {}, 成功: {}, 失败: {}",
+                 taskId, status, successCount, errorCount);
 
         return ImageGenerationResult.builder()
                 .taskId(taskId)

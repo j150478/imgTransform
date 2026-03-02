@@ -1,4 +1,6 @@
 
+.vscode/
+
 # 忽略 .trae 目录
 .trae/
 
