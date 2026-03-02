@@ -36,7 +36,8 @@ public class PhotoTransformServiceImpl implements PhotoTransformService {
     @Override
     public PhotoTransformResponse createTransformTask(PhotoTransformRequest request) {
         // 占位实现：仅记录日志，返回空响应
-        log.info("接收到证件照转化请求");
+        log.info("接收到证件照转化请求，模型类型: {}, 背景颜色: {}, 证件照类型: {}",
+                request.getModelType(), request.getBackgroundColor(), request.getPhotoType());
         return null;
     }
 
@@ -47,7 +48,9 @@ public class PhotoTransformServiceImpl implements PhotoTransformService {
      * 
      * 预期实现步骤：
      * 1. 从存储服务读取原始图片
-     * 2. 调用火山引擎 Seedream 图像生成模型 API
+     * 2. 根据模型类型调用不同的图像生成模型 API
+     *    - 如果是 NANO_PRO，调用 Google 图像生成模型 API
+     *    - 如果是 SEEDREAM_45，调用 火山引擎 Seedream 图像生成模型 API
      *    - 构建符合模型要求的请求参数
      *    - 传入原始图片、背景颜色、证件照类型等参数
      *    - 等待模型处理完成

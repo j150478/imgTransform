@@ -8,14 +8,14 @@ package com.phototransform.enums;
 public enum ModelType {
     
     /**
-     * Doubao Seedream Nano Pro - 轻量级高效模型
+     * Google Nano Pro - 轻量级高效模型
      * 适合快速生成标准证件照
      */
     NANO_PRO,
     
     /**
-     * Jimeng 4.5 - 高性能图像生成模型
+     * seedream 4.5 - 高性能图像生成模型
      * 适合需要高质量细节处理的场景
      */
-    JIMENG_45
+    SEEDREAM_45
 }
