@@ -32,4 +32,12 @@ public interface StorageService {
      * @return 是否存在
      */
     boolean exists(String fileName);
+
+    /**
+     * 根据存储 URL 读取文件字节数据
+     *
+     * @param url 文件的访问 URL（由 store 方法返回）
+     * @return 文件字节数据
+     */
+    byte[] readByUrl(String url);
 }

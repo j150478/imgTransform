@@ -27,6 +27,7 @@ import java.io.InputStream;
 import java.net.URL;
 import java.time.Duration;
 import java.time.LocalDateTime;
+import java.util.Base64;
 import java.util.Collections;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
@@ -120,10 +121,22 @@ public class PhotoTransformServiceImpl implements PhotoTransformService {
             String prompt = buildPrompt(task.getBackgroundColor());
             log.info("[{}] 生成 prompt: {}", taskId, prompt);
 
-            // 3. 调用 Seedream 服务
+            // 3. 将本地图片转为 base64 data URL（Seedream 无法访问 localhost）
+            String imageDataUrl;
+            try {
+                byte[] imageBytes = storageService.readByUrl(task.getOriginalImageUrl());
+                String contentType = resolveContentType(task.getOriginalImageUrl());
+                String base64 = Base64.getEncoder().encodeToString(imageBytes);
+                imageDataUrl = "data:" + contentType + ";base64," + base64;
+            } catch (Exception e) {
+                throw new BusinessException(500, "读取原始图片失败: " + e.getMessage(), e);
+            }
+            log.info("[{}] 原始图片已转为 data URL, 大小: {} chars", taskId, imageDataUrl.length());
+
+            // 4. 调用 Seedream 服务
             ImageGenerationRequest genRequest = ImageGenerationRequest.builder()
                     .prompt(prompt)
-                    .referenceImages(Collections.singletonList(task.getOriginalImageUrl()))
+                    .referenceImages(Collections.singletonList(imageDataUrl))
                     .build();
 
             ImageGenerationResult result = seedreamImageService.generate(genRequest);
@@ -279,6 +292,15 @@ public class PhotoTransformServiceImpl implements PhotoTransformService {
         long hours = TimeUnit.MILLISECONDS.toHours(
                 Duration.between(task.getCreatedTime(), LocalDateTime.now()).toMillis());
         return hours >= taskProperties.getExpireHours();
+    }
+
+    private String resolveContentType(String fileUrl) {
+        String lower = fileUrl.toLowerCase();
+        if (lower.endsWith(".png")) return "image/png";
+        if (lower.endsWith(".jpg") || lower.endsWith(".jpeg")) return "image/jpeg";
+        if (lower.endsWith(".webp")) return "image/webp";
+        if (lower.endsWith(".bmp")) return "image/bmp";
+        return "image/png";
     }
 
     private byte[] readAllBytes(InputStream is) throws Exception {

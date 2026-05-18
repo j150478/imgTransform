@@ -160,8 +160,8 @@ public class SeedreamImageServiceImpl implements SeedreamImageService {
         if (request.getPrompt() == null || request.getPrompt().trim().isEmpty()) {
             throw new BusinessException(400, "生成提示词不能为空");
         }
-        if (request.getPrompt().length() > 600) {
-            throw new BusinessException(400, "生成提示词长度不能超过600个字符");
+        if (request.getPrompt().length() > 2000) {
+            throw new BusinessException(400, "生成提示词长度不能超过2000个字符");
         }
 
         // 验证参考图数量
@@ -363,6 +363,14 @@ public class SeedreamImageServiceImpl implements SeedreamImageService {
                                                           ImageGenerationRequest request,
                                                           GenerationCapability capability,
                                                           String taskId) {
+        // 检查顶层错误
+        if (response.getError() != null) {
+            String errorMsg = response.getError().getMessage() != null
+                    ? response.getError().getMessage() : "API 返回错误";
+            log.error("[{}] Seedream API 返回顶层错误: {}", taskId, errorMsg);
+            return buildErrorResult(request, taskId, errorMsg, response.getError().getCode());
+        }
+
         List<ImageGenerationResult.GeneratedImage> images = new ArrayList<>();
         boolean hasError = false;
         int successCount = 0;

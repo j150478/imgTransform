@@ -73,6 +73,24 @@ public class LocalStorageServiceImpl implements StorageService {
         return Files.exists(storagePath.resolve(fileName));
     }
 
+    @Override
+    public byte[] readByUrl(String url) {
+        String fileName = extractFileNameFromUrl(url);
+        Path filePath = storagePath.resolve(fileName);
+        try {
+            return Files.readAllBytes(filePath);
+        } catch (IOException e) {
+            throw new BusinessException(500, "读取文件失败: " + fileName, e);
+        }
+    }
+
+    private String extractFileNameFromUrl(String url) {
+        if (url == null || !url.contains("/")) {
+            throw new BusinessException(400, "无效的文件URL: " + url);
+        }
+        return url.substring(url.lastIndexOf('/') + 1);
+    }
+
     private String buildUrl(String fileName) {
         String prefix = storageProperties.getUrlPrefix();
         if (!prefix.endsWith("/")) {

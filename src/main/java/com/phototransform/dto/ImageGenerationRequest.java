@@ -50,7 +50,7 @@ public class ImageGenerationRequest {
      * 必填
      */
     @NotBlank(message = "生成提示词不能为空")
-    @Size(max = 600, message = "提示词长度不能超过600个字符")
+    @Size(max = 2000, message = "提示词长度不能超过2000个字符")
     private String prompt;
 
     /**

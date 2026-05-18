@@ -19,8 +19,8 @@ public class SeedreamClientConfig {
     /** 默认模型，默认: doubao-seedream-4-5-251128 */
     private String modelName = "doubao-seedream-4-5-251128";
 
-    /** 默认图像尺寸，默认: 1024x1024 */
-    private String defaultSize = "1024x1024";
+    /** 默认图像尺寸，默认: 2K (2048x2048) */
+    private String defaultSize = "2K";
 
     /** 默认响应格式: url 或 b64_json，默认: url */
     private String defaultResponseFormat = "url";
