@@ -40,3 +40,24 @@ dev-uploads/
 hs_err_pid*
 # Added by code-review-graph
 .code-review-graph/
+
+# AI toolchain (not project-specific)
+.agents/
+.mcp.json
+skills-lock.json
+.claude/settings.json
+.claude/skills/caveman
+.claude/skills/diagnose
+.claude/skills/grill-me
+.claude/skills/grill-with-docs
+.claude/skills/handoff
+.claude/skills/improve-codebase-architecture
+.claude/skills/prototype
+.claude/skills/setup-matt-pocock-skills
+.claude/skills/tdd
+.claude/skills/to-issues
+.claude/skills/to-prd
+.claude/skills/triage
+.claude/skills/write-a-skill
+.claude/skills/zoom-out
+docs/agents/
