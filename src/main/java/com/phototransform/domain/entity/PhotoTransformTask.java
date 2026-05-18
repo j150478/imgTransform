@@ -5,14 +5,18 @@ import java.time.LocalDateTime;
 import com.phototransform.enums.ModelType;
 import com.phototransform.enums.TransformStatus;
 
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 /**
  * 证件照转化任务实体
- * 
- * 描述一次证件照转化任务的完整信息，作为领域模型存在
  */
 @Data
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
 public class PhotoTransformTask {
 
     /**

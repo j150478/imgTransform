@@ -1,26 +1,23 @@
 package com.phototransform.dto;
 
 import com.phototransform.enums.TransformStatus;
+import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
+import lombok.AllArgsConstructor;
 
 /**
  * 照片转化提交响应 DTO
- * 
- * 用于返回任务创建结果，包含任务ID和初始状态
  */
 @Data
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
 public class PhotoTransformResponse {
 
-    /**
-     * 任务唯一标识
-     * 用于后续查询任务状态和结果
-     */
+    /** 任务唯一标识 */
     private String taskId;
 
-    /**
-     * 任务当前状态
-     * 创建后初始状态通常为 PROCESSING
-     * @see TransformStatus
-     */
+    /** 任务当前状态 */
     private TransformStatus status;
 }

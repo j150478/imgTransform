@@ -49,11 +49,10 @@ logging:
 
 # 火山引擎 Seedream 配置
 seedream:
-  # API 访问密钥（从环境变量或配置中心读取，生产环境禁止硬编码）
-  access-key-id: ${ARK_API_KEY}
-  access-key-secret: ${SEEDREAM_ACCESS_KEY_SECRET:}
+  # API Key（从环境变量读取，生产环境禁止硬编码）
+  apiKey: ${ARK_API_KEY}
   # API 端点
-  endpoint: seedream.volces.com
+  baseUrl: "https://ark.cn-beijing.volces.com/api/v3"
   # 连接超时（10秒）
   connection-timeout: 10000
   # 读取超时（60秒）
