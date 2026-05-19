@@ -10,19 +10,22 @@ import com.phototransform.dto.PhotoTransformRequest;
 import com.phototransform.dto.PhotoTransformResponse;
 import com.phototransform.dto.PhotoTransformResultResponse;
 import com.phototransform.enums.BackgroundColor;
+import com.phototransform.enums.GenerationStatus;
 import com.phototransform.enums.ModelType;
 import com.phototransform.enums.TransformStatus;
 import com.phototransform.repository.PhotoTransformTaskRepository;
 import com.phototransform.service.PhotoTransformService;
 import com.phototransform.service.SeedreamImageService;
 import com.phototransform.service.StorageService;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.http.MediaType;
+import org.springframework.http.MediaTypeFactory;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StreamUtils;
 
-import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 import java.net.URL;
 import java.time.Duration;
@@ -37,24 +40,17 @@ import java.util.concurrent.TimeUnit;
  */
 @Slf4j
 @Service
+@RequiredArgsConstructor
 public class PhotoTransformServiceImpl implements PhotoTransformService {
 
     private static final long MAX_FILE_SIZE = 10 * 1024 * 1024;
 
-    @Autowired
-    private PhotoTransformTaskRepository taskRepository;
-
-    @Autowired
-    private StorageService storageService;
-
-    @Autowired
-    private SeedreamImageService seedreamImageService;
-
-    @Autowired
-    private AppTaskProperties taskProperties;
-
-    @Autowired
-    private ApplicationEventPublisher eventPublisher;
+    private final PhotoTransformTaskRepository taskRepository;
+    private final StorageService storageService;
+    private final SeedreamImageService seedreamImageService;
+    private final AppTaskProperties taskProperties;
+    private final ApplicationEventPublisher eventPublisher;
+    private final IdPhotoPromptBuilder promptBuilder;
 
     /**
      * 创建证件照转化任务
@@ -118,14 +114,22 @@ public class PhotoTransformServiceImpl implements PhotoTransformService {
             }
 
             // 2. 构建 prompt
-            String prompt = buildPrompt(task.getBackgroundColor());
+            BackgroundColor bgColor;
+            try {
+                bgColor = BackgroundColor.valueOf(task.getBackgroundColor().toUpperCase());
+            } catch (IllegalArgumentException e) {
+                bgColor = BackgroundColor.BLUE;
+            }
+            String prompt = promptBuilder.build(bgColor);
             log.info("[{}] 生成 prompt: {}", taskId, prompt);
 
             // 3. 将本地图片转为 base64 data URL（Seedream 无法访问 localhost）
             String imageDataUrl;
             try {
                 byte[] imageBytes = storageService.readByUrl(task.getOriginalImageUrl());
-                String contentType = resolveContentType(task.getOriginalImageUrl());
+                String contentType = MediaTypeFactory.getMediaType(task.getOriginalImageUrl())
+                        .map(MediaType::toString)
+                        .orElse("image/png");
                 String base64 = Base64.getEncoder().encodeToString(imageBytes);
                 imageDataUrl = "data:" + contentType + ";base64," + base64;
             } catch (Exception e) {
@@ -142,19 +146,18 @@ public class PhotoTransformServiceImpl implements PhotoTransformService {
             ImageGenerationResult result = seedreamImageService.generate(genRequest);
             log.info("[{}] Seedream 生成完成, 状态: {}", taskId, result.getStatus());
 
-            // 4. 处理结果
-            if ("SUCCESS".equals(result.getStatus()) || "PARTIAL_SUCCESS".equals(result.getStatus())) {
-                // 取第一张成功生成的图片
+            // 5. 处理结果
+            if (result.getStatus() == GenerationStatus.SUCCESS
+                    || result.getStatus() == GenerationStatus.PARTIAL_SUCCESS) {
                 ImageGenerationResult.GeneratedImage generatedImage = result.getImages().stream()
                         .filter(img -> img.getError() == null && img.getUrl() != null)
                         .findFirst()
                         .orElseThrow(() -> new BusinessException(500, "图像生成未返回有效结果"));
 
-                // 保存结果图片到本地存储
                 String resultUrl = saveResultImage(generatedImage.getUrl(), taskId);
                 log.info("[{}] 结果图片已保存: {}", taskId, resultUrl);
 
-                // 5. 更新任务状态为成功
+                // 6. 更新任务状态为成功
                 task.setStatus(TransformStatus.SUCCESS);
                 task.setResultImageUrl(resultUrl);
                 task.setUpdatedTime(LocalDateTime.now());
@@ -192,6 +195,7 @@ public class PhotoTransformServiceImpl implements PhotoTransformService {
         // 2. 检查过期
         if (isTaskExpired(task)) {
             markTaskFailed(task, "任务已过期");
+            task = taskRepository.findByTaskId(taskId);
         }
 
         // 3. 组装响应
@@ -234,42 +238,11 @@ public class PhotoTransformServiceImpl implements PhotoTransformService {
         return BackgroundColor.fromCode(code).getName();
     }
 
-    private String buildPrompt(String backgroundColorName) {
-        BackgroundColor bgColor;
-        try {
-            bgColor = BackgroundColor.valueOf(backgroundColorName.toUpperCase());
-        } catch (IllegalArgumentException e) {
-            bgColor = BackgroundColor.BLUE;
-        }
-
-        return "Turn this photo into a standard ID photo:\n"
-                + "- Background: " + bgColor.getPromptDescription() + "\n"
-                + "- Person: centered, facing forward, symmetrical face\n"
-                + "- Show full head and shoulders\n"
-                + "- Lighting: even and natural\n"
-                + "- Clear face, sharp eyes, natural skin texture\n"
-                + "- Clothes: replace with black suit, white shirt, and black tie\n"
-                + "- Formal style, neat and professional\n"
-                + "- Consistent details: ears, shoulders, tie, collar must be aligned and symmetrical\n"
-                + "- Final style: official passport/ID photo, high resolution, clean and sharp\n"
-                + "\n"
-                + "No artistic effects\n"
-                + "No filters\n"
-                + "No distortions\n"
-                + "No asymmetry in face or body\n"
-                + "No extra objects or backgrounds\n"
-                + "No duplicated or missing body parts\n"
-                + "No clothing artifacts (broken tie, missing collar, misaligned suit)\n"
-                + "No cropped head or missing shoulders\n"
-                + "No unrealistic lighting\n"
-                + "No blurriness or low resolution";
-    }
-
-    private String saveResultImage(String imageUrl, String taskId) {
+    String saveResultImage(String imageUrl, String taskId) {
         try {
             URL url = new URL(imageUrl);
             try (InputStream is = url.openStream()) {
-                byte[] imageBytes = readAllBytes(is);
+                byte[] imageBytes = StreamUtils.copyToByteArray(is);
                 String fileName = taskId + "_result.jpg";
                 return storageService.store(imageBytes, fileName);
             }
@@ -294,22 +267,4 @@ public class PhotoTransformServiceImpl implements PhotoTransformService {
         return hours >= taskProperties.getExpireHours();
     }
 
-    private String resolveContentType(String fileUrl) {
-        String lower = fileUrl.toLowerCase();
-        if (lower.endsWith(".png")) return "image/png";
-        if (lower.endsWith(".jpg") || lower.endsWith(".jpeg")) return "image/jpeg";
-        if (lower.endsWith(".webp")) return "image/webp";
-        if (lower.endsWith(".bmp")) return "image/bmp";
-        return "image/png";
-    }
-
-    private byte[] readAllBytes(InputStream is) throws Exception {
-        ByteArrayOutputStream buffer = new ByteArrayOutputStream();
-        byte[] data = new byte[4096];
-        int nRead;
-        while ((nRead = is.read(data, 0, data.length)) != -1) {
-            buffer.write(data, 0, nRead);
-        }
-        return buffer.toByteArray();
-    }
 }

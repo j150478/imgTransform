@@ -3,8 +3,8 @@ package com.phototransform.service.impl;
 import com.phototransform.common.BusinessException;
 import com.phototransform.config.AppStorageProperties;
 import com.phototransform.service.StorageService;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -13,17 +13,16 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.UUID;
 
 /**
  * 本地文件系统存储服务实现
  */
 @Slf4j
 @Service
+@RequiredArgsConstructor
 public class LocalStorageServiceImpl implements StorageService {
 
-    @Autowired
-    private AppStorageProperties storageProperties;
+    private final AppStorageProperties storageProperties;
 
     private Path storagePath;
 

@@ -1,6 +1,7 @@
 package com.phototransform.dto;
 
 import com.phototransform.enums.GenerationCapability;
+import com.phototransform.enums.GenerationStatus;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -59,7 +60,7 @@ public class ImageGenerationResult {
      * 注意：组图模式下，即使 status 为 SUCCESS，也建议检查每张图片的 error 字段，
      * 因为某些图片可能因审核等原因生成失败。
      */
-    private String status;
+    private GenerationStatus status;
 
     /**
      * 生成的图像列表

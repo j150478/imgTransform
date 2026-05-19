@@ -3,8 +3,8 @@ package com.phototransform.service.impl;
 import com.phototransform.common.TaskCreatedEvent;
 import com.phototransform.domain.entity.PhotoTransformTask;
 import com.phototransform.service.PhotoTransformService;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.event.EventListener;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
@@ -16,10 +16,10 @@ import org.springframework.stereotype.Component;
  */
 @Slf4j
 @Component
+@RequiredArgsConstructor
 public class AsyncTaskExecutor {
 
-    @Autowired
-    private PhotoTransformService photoTransformService;
+    private final PhotoTransformService photoTransformService;
 
     /**
      * 异步处理任务创建事件

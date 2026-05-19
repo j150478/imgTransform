@@ -6,14 +6,15 @@ import com.phototransform.dto.ImageGenerationRequest;
 import com.phototransform.dto.ImageGenerationResult;
 import com.phototransform.enums.GenerationCapability;
 import com.phototransform.enums.GenerationMode;
+import com.phototransform.enums.GenerationStatus;
 import com.phototransform.service.SeedreamImageService;
 import com.volcengine.ark.runtime.model.images.generation.GenerateImagesRequest;
 import com.volcengine.ark.runtime.model.images.generation.ImagesResponse;
 import com.volcengine.ark.runtime.service.ArkService;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import okhttp3.ConnectionPool;
 import okhttp3.Dispatcher;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.PostConstruct;
@@ -36,6 +37,7 @@ import java.util.concurrent.TimeUnit;
  */
 @Slf4j
 @Service
+@RequiredArgsConstructor
 public class SeedreamImageServiceImpl implements SeedreamImageService {
 
     /**
@@ -53,8 +55,7 @@ public class SeedreamImageServiceImpl implements SeedreamImageService {
      */
     private static final int DEFAULT_SEQUENTIAL_COUNT = 4;
 
-    @Autowired
-    private SeedreamClientConfig config;
+    private final SeedreamClientConfig config;
 
     private ArkService arkService;
 
@@ -408,11 +409,12 @@ public class SeedreamImageServiceImpl implements SeedreamImageService {
         }
 
         // 确定最终状态
-        String status;
+        GenerationStatus status;
         if (hasError) {
-            status = images.stream().allMatch(img -> img.getError() != null) ? "FAILED" : "PARTIAL_SUCCESS";
+            status = images.stream().allMatch(img -> img.getError() != null)
+                    ? GenerationStatus.FAILED : GenerationStatus.PARTIAL_SUCCESS;
         } else {
-            status = "SUCCESS";
+            status = GenerationStatus.SUCCESS;
         }
 
         // 记录生成结果统计
@@ -448,7 +450,7 @@ public class SeedreamImageServiceImpl implements SeedreamImageService {
                                                    String errorCode) {
         return ImageGenerationResult.builder()
                 .taskId(taskId)
-                .status("FAILED")
+                .status(GenerationStatus.FAILED)
                 .images(new ArrayList<>())
                 .createdAt(LocalDateTime.now())
                 .completedAt(LocalDateTime.now())
