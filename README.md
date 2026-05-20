@@ -27,12 +27,14 @@
 - JDK 1.8+
 - Maven 3.6+
 - 火山引擎 API Key（环境变量 `ARK_API_KEY`）
+- Supabase 数据库密码（环境变量 `SUPABASE_DB_PASSWORD`）
 
 ### 启动
 
 ```bash
 # 设置 API Key
 export ARK_API_KEY="your-api-key"
+export SUPABASE_DB_PASSWORD="your-db-password"
 
 # 开发模式（端口 8081）
 mvn spring-boot:run
@@ -180,6 +182,7 @@ src/main/java/com/phototransform/
 | 变量 | 说明 |
 |------|------|
 | `ARK_API_KEY` | 火山引擎 API Key（必填） |
+| `SUPABASE_DB_PASSWORD` | Supabase 数据库密码（必填） |
 
 ### Seedream 配置（`seedream.*`）
 
@@ -236,6 +239,9 @@ mvn -Dtest=PhotoTransformControllerRealApiTest test
 
 **Q: 启动报 ARK_API_KEY 未配置？**
 A: 设置环境变量 `export ARK_API_KEY="your-key"`。
+
+**Q: 启动报数据库连接失败（password authentication failed）？**
+A: 设置环境变量 `export SUPABASE_DB_PASSWORD="your-db-password"`。
 
 **Q: 生成失败提示图片尺寸不足？**
 A: 图生图最低要求 3,686,400 像素，检查 `seedream.defaultSize` 配置。
