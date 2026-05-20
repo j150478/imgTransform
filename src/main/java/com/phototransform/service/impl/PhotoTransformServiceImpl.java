@@ -231,7 +231,7 @@ public class PhotoTransformServiceImpl implements PhotoTransformService {
             log.info("[{}] 超时任务已标记 FAILED", task.getTaskId());
         }
 
-        // 2. 删除已过期的 SUCCESS/FAILED 任务
+        // 2. 删除已过期的 SUCCESS/FAILED 任务（先删存储文件，再删 DB 记录）
         LocalDateTime expiryThreshold = LocalDateTime.now()
                 .minusHours(taskProperties.getExpiryHours());
         List<PhotoTransformTask> expiredCompleted = new ArrayList<>(
@@ -239,8 +239,12 @@ public class PhotoTransformServiceImpl implements PhotoTransformService {
         expiredCompleted.addAll(
                 taskRepository.findByStatusAndCreatedTimeBefore(TransformStatus.FAILED, expiryThreshold));
         if (!expiredCompleted.isEmpty()) {
+            for (PhotoTransformTask task : expiredCompleted) {
+                storageService.deleteByUrl(task.getOriginalImageUrl());
+                storageService.deleteByUrl(task.getResultImageUrl());
+            }
             taskRepository.deleteAll(expiredCompleted);
-            log.info("已删除 {} 条过期任务记录", expiredCompleted.size());
+            log.info("已删除 {} 条过期任务记录及关联文件", expiredCompleted.size());
         }
 
         log.info("过期任务清理完成，超时: {}, 过期删除: {}", timedOutTasks.size(), expiredCompleted.size());

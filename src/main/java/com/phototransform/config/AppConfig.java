@@ -15,6 +15,8 @@ import org.springframework.web.filter.CorsFilter;
 import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
+import org.springframework.web.client.RestTemplate;
+
 import java.nio.file.Paths;
 import java.util.concurrent.Executor;
 
@@ -49,10 +51,22 @@ public class AppConfig implements WebMvcConfigurer {
     }
 
     /**
-     * 静态资源映射：将上传目录映射为可访问的 URL
+     * RestTemplate Bean（用于 Supabase Storage REST API）
+     */
+    @Bean
+    public RestTemplate restTemplate() {
+        return new RestTemplate();
+    }
+
+    /**
+     * 静态资源映射：将上传目录映射为可访问的 URL（仅 local 存储类型）
      */
     @Override
     public void addResourceHandlers(ResourceHandlerRegistry registry) {
+        if (!"local".equals(storageProperties.getType())) {
+            log.info("存储类型为 {}，跳过本地静态资源映射", storageProperties.getType());
+            return;
+        }
         String absolutePath = Paths.get(storageProperties.getLocalPath()).toAbsolutePath().toString();
         registry.addResourceHandler("/uploads/**", "/dev-uploads/**")
                 .addResourceLocations("file:" + absolutePath + "/");

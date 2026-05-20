@@ -5,6 +5,7 @@ import com.phototransform.config.AppStorageProperties;
 import com.phototransform.service.StorageService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -20,6 +21,7 @@ import java.nio.file.Paths;
 @Slf4j
 @Service
 @RequiredArgsConstructor
+@ConditionalOnProperty(name = "app.storage.type", havingValue = "local")
 public class LocalStorageServiceImpl implements StorageService {
 
     private final AppStorageProperties storageProperties;
@@ -68,8 +70,15 @@ public class LocalStorageServiceImpl implements StorageService {
     }
 
     @Override
-    public boolean exists(String fileName) {
-        return Files.exists(storagePath.resolve(fileName));
+    public void deleteByUrl(String url) {
+        String fileName = extractFileNameFromUrl(url);
+        Path filePath = storagePath.resolve(fileName);
+        try {
+            Files.deleteIfExists(filePath);
+            log.info("文件删除成功: {}", filePath);
+        } catch (IOException e) {
+            log.warn("删除文件失败: {}", filePath, e);
+        }
     }
 
     @Override

@@ -14,7 +14,7 @@ import org.springframework.stereotype.Component;
 @ConfigurationProperties(prefix = "app.storage")
 public class AppStorageProperties {
 
-    /** 存储类型（local/oss/cos） */
+    /** 存储类型（local/supabase） */
     private String type = "local";
 
     /** 本地存储路径 */

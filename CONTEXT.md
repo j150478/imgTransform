@@ -19,3 +19,9 @@ PROCESSING 状态任务的最大存活时间。超时后由 cron 或启动清理
 
 ### Pooler
 Supabase 的连接池代理层（transaction 模式）。应用侧通过 Shared Pooler 连接，无需自行管理 PG 连接复用。
+
+### Supabase Storage
+远程文件存储服务。替代本地文件系统，通过 REST API 上传/下载/删除文件。公开 bucket 返回可访问 URL，前端可直接渲染。
+
+### Service Role Key
+Supabase 服务端 API Key，拥有最高权限。仅在服务端使用，严禁暴露给前端。用于 Storage REST API 调用。

@@ -3,7 +3,7 @@ package com.phototransform.service;
 import org.springframework.web.multipart.MultipartFile;
 
 /**
- * 本地文件存储服务接口
+ * 文件存储服务接口
  */
 public interface StorageService {
 
@@ -26,12 +26,11 @@ public interface StorageService {
     String store(byte[] data, String fileName);
 
     /**
-     * 检查文件是否存在
+     * 根据存储 URL 删除文件
      *
-     * @param fileName 文件名
-     * @return 是否存在
+     * @param url 文件的访问 URL（由 store 方法返回）
      */
-    boolean exists(String fileName);
+    void deleteByUrl(String url);
 
     /**
      * 根据存储 URL 读取文件字节数据

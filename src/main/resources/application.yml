@@ -75,15 +75,21 @@ seedream:
   # 读取超时（60秒）
   read-timeout: 60000
 
+# Supabase 配置
+supabase:
+  storage:
+    url: https://tbwbftcrpdwojrmscfuk.supabase.co
+    serviceRoleKey: ${SUPABASE_SERVICE_ROLE_KEY}
+
 # 应用自定义配置
 app:
   # 图片存储配置
   storage:
-    # 存储类型（local:本地，oss:阿里云，cos:腾讯云）
-    type: local
-    # 本地存储路径
+    # 存储类型（local/supabase）
+    type: supabase
+    # 本地存储路径（type=local 时使用）
     local-path: uploads/
-    # 访问URL前缀
+    # 访问URL前缀（type=local 时使用）
     url-prefix: http://localhost:8080/uploads/
   
   # 任务处理配置
