@@ -21,7 +21,8 @@ spring:
 
   # 数据源配置（Supabase PostgreSQL）
   datasource:
-    url: jdbc:postgresql://aws-1-ap-northeast-1.pooler.supabase.com:5432/postgres?user=postgres.tbwbftcrpdwojrmscfuk&password=${SUPABASE_DB_PASSWORD}
+    url: jdbc:postgresql://aws-1-ap-northeast-1.pooler.supabase.com:5432/postgres?user=postgres.tbwbftcrpdwojrmscfuk
+    password: ${SUPABASE_DB_PASSWORD}
     driver-class-name: org.postgresql.Driver
     hikari:
       maximum-pool-size: 5
