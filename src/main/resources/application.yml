@@ -19,6 +19,22 @@ spring:
       # 文件写入磁盘的阈值（2KB）
       file-size-threshold: 2KB
 
+  # 数据源配置（Supabase PostgreSQL）
+  datasource:
+    url: jdbc:postgresql://aws-1-ap-northeast-1.pooler.supabase.com:5432/postgres?user=postgres.tbwbftcrpdwojrmscfuk&password=${SUPABASE_DB_PASSWORD}
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      maximum-pool-size: 5
+      minimum-idle: 2
+
+  # JPA 配置
+  jpa:
+    hibernate:
+      ddl-auto: update
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+
   # 日期时间格式配置
   jackson:
     date-format: yyyy-MM-dd HH:mm:ss
@@ -71,7 +87,9 @@ app:
   
   # 任务处理配置
   task:
-    # 任务过期时间（小时）
-    expire-hours: 24
-    # 清理过期任务cron表达式（每天凌晨2点）
-    cleanup-cron: 0 0 2 * * ?
+    # PROCESSING 任务最大存活时间（小时），超时标记 FAILED
+    timeout-hours: 1
+    # 已完成任务保留时间（小时），过期后不可查询
+    expiry-hours: 24
+    # 清理过期任务cron表达式（每小时）
+    cleanup-cron: 0 0 * * * ?

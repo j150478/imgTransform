@@ -58,8 +58,10 @@ app:
     local-path: dev-uploads/
     url-prefix: http://localhost:8080/dev-uploads/
   task:
+    # 开发环境缩短 timeout 便于测试
+    timeout-hours: 0.5
     # 开发环境缩短过期时间便于测试
-    expire-hours: 1
+    expiry-hours: 1
     cleanup-cron: 0 */5 * * * ?
 
 # CORS 跨域配置（开发环境允许所有来源）

@@ -19,7 +19,9 @@ import com.phototransform.service.SeedreamImageService;
 import com.phototransform.service.StorageService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.context.event.EventListener;
 import org.springframework.http.MediaType;
 import org.springframework.http.MediaTypeFactory;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -30,10 +32,11 @@ import java.io.InputStream;
 import java.net.URL;
 import java.time.Duration;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.Base64;
 import java.util.Collections;
+import java.util.List;
 import java.util.UUID;
-import java.util.concurrent.TimeUnit;
 
 /**
  * 照片转化服务实现类
@@ -181,21 +184,23 @@ public class PhotoTransformServiceImpl implements PhotoTransformService {
      * 查询证件照转化结果
      *
      * 1. 查询任务记录
-     * 2. 检查任务是否过期
+     * 2. 检查已完成任务是否过期（只读，不写 DB）
      * 3. 组装响应
      */
     @Override
     public PhotoTransformResultResponse queryTransformResult(String taskId) {
         // 1. 查询任务
-        PhotoTransformTask task = taskRepository.findByTaskId(taskId);
+        PhotoTransformTask task = taskRepository.findById(taskId).orElse(null);
         if (task == null) {
             throw new BusinessException(404, "任务不存在: " + taskId);
         }
 
-        // 2. 检查过期
-        if (isTaskExpired(task)) {
-            markTaskFailed(task, "任务已过期");
-            task = taskRepository.findByTaskId(taskId);
+        // 2. 已完成任务过期则返回提示（不写 DB，写操作由 cron 负责）
+        if (isTaskCompletedAndExpired(task)) {
+            return PhotoTransformResultResponse.builder()
+                    .status(TransformStatus.FAILED)
+                    .errorMessage("任务已过期")
+                    .build();
         }
 
         // 3. 组装响应
@@ -208,12 +213,54 @@ public class PhotoTransformServiceImpl implements PhotoTransformService {
 
     /**
      * 定时清理过期任务
+     *
+     * 1. 清理超时 PROCESSING 任务（标记 FAILED）
+     * 2. 删除已过期的 SUCCESS/FAILED 任务记录
      */
-    @Scheduled(cron = "${app.task.cleanup-cron:0 0 2 * * ?}")
+    @Scheduled(cron = "${app.task.cleanup-cron:0 0 * * * ?}")
     public void cleanupExpiredTasks() {
         log.info("开始清理过期任务...");
-        // InMemoryTaskRepository 暂不支持遍历，后续 MyBatis 实现时补充
-        log.info("过期任务清理完成（内存存储暂跳过）");
+
+        // 1. 清理超时 PROCESSING 任务
+        LocalDateTime timeoutThreshold = LocalDateTime.now()
+                .minusHours((long) taskProperties.getTimeoutHours());
+        List<PhotoTransformTask> timedOutTasks = taskRepository
+                .findByStatusAndCreatedTimeBefore(TransformStatus.PROCESSING, timeoutThreshold);
+        for (PhotoTransformTask task : timedOutTasks) {
+            markTaskFailed(task, "任务超时（超过 " + taskProperties.getTimeoutHours() + " 小时未完成）");
+            log.info("[{}] 超时任务已标记 FAILED", task.getTaskId());
+        }
+
+        // 2. 删除已过期的 SUCCESS/FAILED 任务
+        LocalDateTime expiryThreshold = LocalDateTime.now()
+                .minusHours(taskProperties.getExpiryHours());
+        List<PhotoTransformTask> expiredCompleted = new ArrayList<>(
+                taskRepository.findByStatusAndCreatedTimeBefore(TransformStatus.SUCCESS, expiryThreshold));
+        expiredCompleted.addAll(
+                taskRepository.findByStatusAndCreatedTimeBefore(TransformStatus.FAILED, expiryThreshold));
+        if (!expiredCompleted.isEmpty()) {
+            taskRepository.deleteAll(expiredCompleted);
+            log.info("已删除 {} 条过期任务记录", expiredCompleted.size());
+        }
+
+        log.info("过期任务清理完成，超时: {}, 过期删除: {}", timedOutTasks.size(), expiredCompleted.size());
+    }
+
+    /**
+     * 应用启动时清理残留 PROCESSING 任务
+     */
+    @EventListener(ApplicationReadyEvent.class)
+    public void cleanupStaleTasksOnStartup() {
+        log.info("应用启动，清理残留 PROCESSING 任务...");
+        LocalDateTime threshold = LocalDateTime.now()
+                .minusHours((long) taskProperties.getTimeoutHours());
+        List<PhotoTransformTask> staleTasks = taskRepository
+                .findByStatusAndCreatedTimeBefore(TransformStatus.PROCESSING, threshold);
+        for (PhotoTransformTask task : staleTasks) {
+            markTaskFailed(task, "应用重启，任务已超时");
+            log.info("[{}] 残留任务已标记 FAILED", task.getTaskId());
+        }
+        log.info("启动清理完成，处理残留任务: {}", staleTasks.size());
     }
 
     // ==================== 私有方法 ====================
@@ -258,13 +305,18 @@ public class PhotoTransformServiceImpl implements PhotoTransformService {
         taskRepository.save(task);
     }
 
-    private boolean isTaskExpired(PhotoTransformTask task) {
+    /**
+     * 判断已完成任务是否过期（读路径专用，不写 DB）
+     */
+    private boolean isTaskCompletedAndExpired(PhotoTransformTask task) {
+        if (task.getStatus() == TransformStatus.PROCESSING) {
+            return false;
+        }
         if (task.getCreatedTime() == null) {
             return false;
         }
-        long hours = TimeUnit.MILLISECONDS.toHours(
-                Duration.between(task.getCreatedTime(), LocalDateTime.now()).toMillis());
-        return hours >= taskProperties.getExpireHours();
+        Duration elapsed = Duration.between(task.getCreatedTime(), LocalDateTime.now());
+        return elapsed.toHours() >= taskProperties.getExpiryHours();
     }
 
 }
