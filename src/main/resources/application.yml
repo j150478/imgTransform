@@ -80,6 +80,7 @@ supabase:
   storage:
     url: https://tbwbftcrpdwojrmscfuk.supabase.co
     serviceRoleKey: ${SUPABASE_SERVICE_ROLE_KEY}
+    bucket: photoX
 
 # 应用自定义配置
 app:

@@ -108,7 +108,8 @@ public class SupabaseStorageServiceImpl implements StorageService {
      * 上传文件到 Supabase Storage
      */
     private String upload(String objectPath, byte[] data, String contentType) {
-        String uploadUrl = supabaseProperties.getUrl() + "/storage/v1/object/" + objectPath;
+        String bucketPath = supabaseProperties.getBucket() + "/" + objectPath;
+        String uploadUrl = supabaseProperties.getUrl() + "/storage/v1/object/" + bucketPath;
         HttpHeaders headers = authHeaders();
         headers.setContentType(MediaType.parseMediaType(contentType));
 
@@ -130,9 +131,9 @@ public class SupabaseStorageServiceImpl implements StorageService {
             throw new BusinessException(500, "上传文件失败: " + e.getMessage(), e);
         }
 
-        log.info("文件上传成功: {}", objectPath);
+        log.info("文件上传成功: {}", bucketPath);
         return supabaseProperties.getUrl()
-                + "/storage/v1/object/public/" + objectPath;
+                + "/storage/v1/object/public/" + bucketPath;
     }
 
     /**

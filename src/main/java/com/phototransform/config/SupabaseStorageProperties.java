@@ -19,4 +19,7 @@ public class SupabaseStorageProperties {
 
     /** 服务端 API Key（service_role） */
     private String serviceRoleKey;
+
+    /** 存储桶名称 */
+    private String bucket;
 }
