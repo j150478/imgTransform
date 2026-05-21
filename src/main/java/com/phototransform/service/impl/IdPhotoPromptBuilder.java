@@ -30,6 +30,7 @@ public class IdPhotoPromptBuilder {
      * 根据背景色构建证件照生成 prompt（默认使用 id-photo 模板）
      */
     public String build(BackgroundColor backgroundColor) {
+        // 1. 使用默认 id-photo 模板构建
         return build("id-photo", backgroundColor);
     }
 
@@ -41,10 +42,13 @@ public class IdPhotoPromptBuilder {
      * @return 组合后的完整 prompt
      */
     public String build(String photoType, BackgroundColor backgroundColor) {
+        // 1. 根据证件照类型解析模板
         PromptTemplate tmpl = resolveTemplate(photoType);
+        // 2. 替换颜色占位符生成正面指令
         String system = tmpl.getSystem()
                 .replace("{name}", backgroundColor.getName())
                 .replace("{rgb}", backgroundColor.getRgb());
+        // 3. 拼接负面约束，生成完整 prompt
         return system + "\n\n" + tmpl.getNegative();
     }
 

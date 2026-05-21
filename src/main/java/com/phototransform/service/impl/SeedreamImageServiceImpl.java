@@ -69,8 +69,10 @@ public class SeedreamImageServiceImpl implements SeedreamImageService {
     @PostConstruct
     public void init() {
         log.info("正在初始化 Seedream 图像生成服务...");
+        // 1. 验证配置有效性
         validateConfig();
 
+        // 2. 构建 ArkService 客户端
         this.arkService = ArkService.builder()
                 .baseUrl(config.getBaseUrl())
                 .connectTimeout(Duration.ofMillis(config.getConnectionTimeout()))
@@ -130,13 +132,13 @@ public class SeedreamImageServiceImpl implements SeedreamImageService {
         log.info("[{}] 开始指定能力生成任务: {}", taskId, capability.getDescription());
 
         try {
-            // 验证请求与指定能力是否匹配
+            // 1. 验证请求与指定能力是否匹配
             validateCapabilityMatch(request, capability);
 
-            // 设置能力到请求中
+            // 2. 设置能力到请求中
             request.setCapability(capability);
 
-            // 执行生成
+            // 3. 执行生成
             return executeGeneration(request, capability, taskId);
 
         } catch (BusinessException e) {
@@ -157,7 +159,7 @@ public class SeedreamImageServiceImpl implements SeedreamImageService {
      * @throws BusinessException 当参数验证失败时抛出
      */
     private void validateRequest(ImageGenerationRequest request) {
-        // 验证提示词
+        // 1. 验证提示词
         if (request.getPrompt() == null || request.getPrompt().trim().isEmpty()) {
             throw new BusinessException(400, "生成提示词不能为空");
         }
@@ -165,14 +167,14 @@ public class SeedreamImageServiceImpl implements SeedreamImageService {
             throw new BusinessException(400, "生成提示词长度不能超过2000个字符");
         }
 
-        // 验证参考图数量
+        // 2. 验证参考图数量
         List<String> referenceImages = request.getReferenceImages();
         if (referenceImages != null && referenceImages.size() > MAX_REFERENCE_IMAGES) {
             throw new BusinessException(400,
                     String.format("参考图数量不能超过%d张，当前: %d", MAX_REFERENCE_IMAGES, referenceImages.size()));
         }
 
-        // 验证组图生成数量
+        // 3. 验证组图生成数量
         GenerationMode mode = request.getMode();
         Integer n = request.getN();
 
@@ -191,7 +193,7 @@ public class SeedreamImageServiceImpl implements SeedreamImageService {
             }
         }
 
-        // 验证尺寸
+        // 4. 验证尺寸
         if (request.getSize() != null && !request.getSize().matches("^(\\d+x\\d+|1K|2K|4K)$")) {
             throw new BusinessException(400, "图像尺寸格式不正确，应为具体尺寸（如1024x1024）或分辨率标识（1K/2K/4K）");
         }
@@ -206,22 +208,22 @@ public class SeedreamImageServiceImpl implements SeedreamImageService {
      * @return 识别到的生成能力
      */
     private GenerationCapability determineCapability(ImageGenerationRequest request) {
-        // 如果请求中已显式指定能力，直接使用
+        // 1. 如果请求中已显式指定能力，直接使用
         if (request.getCapability() != null) {
             return request.getCapability();
         }
 
-        // 获取参考图数量和生成模式
+        // 2. 获取参考图数量和生成模式
         int refCount = request.getReferenceImages() == null ? 0 : request.getReferenceImages().size();
         GenerationMode mode = request.getMode();
 
-        // 如果未指定模式，根据生成数量判断
+        // 3. 如果未指定模式，根据生成数量判断
         if (mode == null) {
             Integer n = request.getN();
             mode = (n != null && n > 1) ? GenerationMode.SEQUENTIAL : GenerationMode.SINGLE;
         }
 
-        // 根据参考图数量和生成模式确定能力
+        // 4. 根据参考图数量和生成模式确定能力
         if (refCount == 0) {
             // 文生图
             return mode == GenerationMode.SEQUENTIAL
@@ -287,7 +289,7 @@ public class SeedreamImageServiceImpl implements SeedreamImageService {
     private ImageGenerationResult executeGeneration(ImageGenerationRequest request,
                                                       GenerationCapability capability,
                                                       String taskId) {
-        // 构建 SDK 请求
+        // 1. 构建 SDK 请求
         GenerateImagesRequest sdkRequest = buildSdkRequest(request, capability);
 
         log.info("[{}] [SEEDREAM_REQUEST] prompt(len: {}): {}, refImages: {}, size: {}, model: {}, capability: {}",
@@ -296,7 +298,7 @@ public class SeedreamImageServiceImpl implements SeedreamImageService {
                 sdkRequest.getImage() != null ? sdkRequest.getImage().size() : 0,
                 sdkRequest.getSize(), sdkRequest.getModel(), capability.getDescription());
 
-        // 调用 SDK
+        // 2. 调用 SDK
         ImagesResponse response;
         try {
             response = arkService.generateImages(sdkRequest);
@@ -305,7 +307,7 @@ public class SeedreamImageServiceImpl implements SeedreamImageService {
             throw new BusinessException(500, "图像生成服务调用失败: " + e.getMessage());
         }
 
-        // 转换响应为结果 DTO
+        // 3. 转换响应为结果 DTO
         return convertResponseToResult(response, request, capability, taskId);
     }
 
@@ -320,6 +322,7 @@ public class SeedreamImageServiceImpl implements SeedreamImageService {
      */
     private GenerateImagesRequest buildSdkRequest(ImageGenerationRequest request,
                                                   GenerationCapability capability) {
+        // 1. 构建基础请求参数（模型、提示词、尺寸、格式、水印、生成模式）
         GenerateImagesRequest.Builder builder = GenerateImagesRequest.builder()
                 .model(getModel(request))
                 .prompt(request.getPrompt())
@@ -328,7 +331,7 @@ public class SeedreamImageServiceImpl implements SeedreamImageService {
                 .watermark(getWatermark(request))
                 .sequentialImageGeneration(capability.getGenerationMode().getSdkValue());
 
-        // 添加参考图
+        // 2. 添加参考图
         List<String> referenceImages = request.getReferenceImages();
         if (referenceImages != null && !referenceImages.isEmpty()) {
             // 单图参考
@@ -342,11 +345,10 @@ public class SeedreamImageServiceImpl implements SeedreamImageService {
             }
         }
 
-        // 组图模式下设置生成数量
+        // 3. 组图模式下设置生成数量
         if (capability.isSequential() && request.getN() != null && request.getN() > 1) {
-            // 注意：SDK 版本不同，设置生成数量的方法可能不同
-            // 此处假设 SDK 支持通过额外参数传递
-            // 如果 SDK 不支持，可以通过 extraParams 传递
+            // NOTE: SDK 版本不同，设置生成数量的方法可能不同，目前暂不实现。
+            // 如果 SDK 支持，可以通过额外参数传递或通过 extraParams 传递。
         }
 
         return builder.build();
@@ -367,7 +369,7 @@ public class SeedreamImageServiceImpl implements SeedreamImageService {
                                                           ImageGenerationRequest request,
                                                           GenerationCapability capability,
                                                           String taskId) {
-        // 检查顶层错误
+        // 1. 检查顶层错误
         if (response.getError() != null) {
             String errorMsg = response.getError().getMessage() != null
                     ? response.getError().getMessage() : "API 返回错误";
@@ -380,7 +382,7 @@ public class SeedreamImageServiceImpl implements SeedreamImageService {
         int successCount = 0;
         int errorCount = 0;
 
-        // 解析 SDK 响应中的图片数据
+        // 2. 解析 SDK 响应中的图片数据
         if (response.getData() != null) {
             for (int i = 0; i < response.getData().size(); i++) {
                 ImagesResponse.Image img = response.getData().get(i);
@@ -389,7 +391,7 @@ public class SeedreamImageServiceImpl implements SeedreamImageService {
                         ImageGenerationResult.GeneratedImage.builder()
                                 .index(i);
 
-                // 检查图片是否生成失败
+                // 2.1 检查单张图片是否生成失败
                 // 当 url 和 b64Json 均为 null 时，认为图片生成失败
                 boolean imageHasError = img.getUrl() == null && img.getB64Json() == null;
 
@@ -411,7 +413,7 @@ public class SeedreamImageServiceImpl implements SeedreamImageService {
             }
         }
 
-        // 确定最终状态
+        // 3. 确定最终状态
         GenerationStatus status;
         if (hasError) {
             status = images.stream().allMatch(img -> img.getError() != null)
@@ -420,7 +422,7 @@ public class SeedreamImageServiceImpl implements SeedreamImageService {
             status = GenerationStatus.SUCCESS;
         }
 
-        // 记录生成结果统计
+        // 4. 记录生成结果统计
         log.info("[{}] 生成任务完成，状态: {}, 成功: {}, 失败: {}",
                  taskId, status, successCount, errorCount);
 

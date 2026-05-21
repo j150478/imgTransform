@@ -21,7 +21,10 @@ import java.nio.file.Paths;
 import java.util.concurrent.Executor;
 
 /**
- * 应用配置类
+ * 应用核心配置类。
+ *
+ * <p>配置异步任务线程池、RestTemplate、静态资源映射及 CORS 跨域策略。
+ * 通过 {@link EnableAsync} 和 {@link EnableScheduling} 启用异步任务与定时调度能力。</p>
  */
 @Slf4j
 @Configuration
@@ -33,7 +36,12 @@ public class AppConfig implements WebMvcConfigurer {
     private AppStorageProperties storageProperties;
 
     /**
-     * 异步任务处理线程池
+     * 异步任务处理线程池。
+     *
+     * <p>核心线程数 4，最大线程数 8，队列容量 100。
+     * 拒绝策略：队列满时抛出 {@link RuntimeException}，提示调用方稍后重试。</p>
+     *
+     * @return 异步任务执行器
      */
     @Bean("taskExecutor")
     public Executor taskExecutor() {
@@ -51,7 +59,9 @@ public class AppConfig implements WebMvcConfigurer {
     }
 
     /**
-     * RestTemplate Bean（用于 Supabase Storage REST API）
+     * 提供 {@link RestTemplate} 实例，用于调用 Supabase Storage REST API。
+     *
+     * @return RestTemplate 实例
      */
     @Bean
     public RestTemplate restTemplate() {
@@ -59,7 +69,12 @@ public class AppConfig implements WebMvcConfigurer {
     }
 
     /**
-     * 静态资源映射：将上传目录映射为可访问的 URL（仅 local 存储类型）
+     * 配置静态资源映射，将本地上传目录暴露为可访问的 URL。
+     *
+     * <p>仅当存储类型为 {@code local} 时生效，将 {@code /uploads/**} 和 {@code /dev-uploads/**}
+     * 路径映射到 {@link AppStorageProperties#getLocalPath()} 指定的文件系统目录。</p>
+     *
+     * @param registry 资源处理器注册表
      */
     @Override
     public void addResourceHandlers(ResourceHandlerRegistry registry) {
@@ -74,7 +89,12 @@ public class AppConfig implements WebMvcConfigurer {
     }
 
     /**
-     * CORS 跨域配置
+     * 配置 CORS 跨域过滤器。
+     *
+     * <p>允许所有来源、方法、请求头，不携带凭据，预检请求有效期 3600 秒。
+     * 以最高优先级注册，确保跨域请求在所有其他过滤器之前被处理。</p>
+     *
+     * @return {@link CorsFilter} 的过滤器注册 Bean
      */
     @Bean
     public FilterRegistrationBean<CorsFilter> corsFilter() {

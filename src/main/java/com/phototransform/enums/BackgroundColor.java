@@ -14,8 +14,22 @@ public enum BackgroundColor {
     RED(2, "red", "255,0,0"),
     WHITE(3, "white", "255,255,255");
 
+    /**
+     * 颜色代码（前端传入的标识）
+     * 1 = 蓝色, 2 = 红色, 3 = 白色
+     */
     private final int code;
+
+    /**
+     * 颜色英文名称
+     * 用于 Seedream API 的背景色参数
+     */
     private final String name;
+
+    /**
+     * RGB 颜色值
+     * 格式为 "R,G,B"，用于图像处理时的颜色替换
+     */
     private final String rgb;
 
     BackgroundColor(int code, String name, String rgb) {

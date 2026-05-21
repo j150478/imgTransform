@@ -5,9 +5,12 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.stereotype.Component;
 
 /**
- * 应用任务配置
+ * 应用任务生命周期配置。
  *
- * 读取 app.task.* 配置项
+ * <p>读取 {@code app.task.*} 配置项，用于控制任务超时判定、结果保留时长及清理调度策略。
+ * {@link #timeoutHours} 控制 PROCESSING 状态任务超时阈值，
+ * {@link #expiryHours} 控制已完成任务的可查询窗口，
+ * {@link #cleanupCron} 控制定时清理的执行频率。</p>
  */
 @Data
 @Component

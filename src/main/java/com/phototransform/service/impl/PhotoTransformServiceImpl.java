@@ -266,17 +266,28 @@ public class PhotoTransformServiceImpl implements PhotoTransformService {
 
     /**
      * 应用启动时清理残留 PROCESSING 任务
+     *
+     * 1. 计算超时阈值
+     * 2. 查询残留的 PROCESSING 任务
+     * 3. 标记超时任务为 FAILED
      */
     @EventListener(ApplicationReadyEvent.class)
     public void cleanupStaleTasksOnStartup() {
         log.info("应用启动，清理残留 PROCESSING 任务...");
+
+        // 1. 计算超时阈值
         LocalDateTime threshold = getTimeoutThreshold();
+
+        // 2. 查询残留的 PROCESSING 任务
         List<PhotoTransformTask> staleTasks = taskRepository
                 .findByStatusAndCreatedTimeBefore(TransformStatus.PROCESSING, threshold);
+
+        // 3. 标记超时任务为 FAILED
         for (PhotoTransformTask task : staleTasks) {
             markTaskFailed(task, "应用重启，任务已超时");
             log.info("[{}] 残留任务已标记 FAILED", task.getTaskId());
         }
+
         log.info("启动清理完成，处理残留任务: {}", staleTasks.size());
     }
 
@@ -286,53 +297,108 @@ public class PhotoTransformServiceImpl implements PhotoTransformService {
      * 计算超时阈值，将 timeoutHours 转为分钟避免 (long) 截断小数（如 0.5 小时 = 30 分钟）
      */
     private LocalDateTime getTimeoutThreshold() {
+        // 1. 将 timeoutHours 转为分钟，避免 (long) 截断小数
         long timeoutMinutes = (long) (taskProperties.getTimeoutHours() * 60);
         return LocalDateTime.now().minusMinutes(timeoutMinutes);
     }
 
+    /**
+     * 校验证件照转化请求参数
+     *
+     * 1. 检查文件是否为空
+     * 2. 检查文件大小是否超过限制
+     * 3. 检查文件类型是否为图片
+     */
     private void validateRequest(PhotoTransformRequest request) {
+        // 1. 检查文件是否为空
         if (request.getFile() == null || request.getFile().isEmpty()) {
             throw new BusinessException(400, "上传文件不能为空");
         }
+
+        // 2. 检查文件大小是否超过限制
         if (request.getFile().getSize() > MAX_FILE_SIZE) {
             throw new BusinessException(400, "文件大小不能超过10MB");
         }
+
+        // 3. 检查文件类型是否为图片
         String contentType = request.getFile().getContentType();
         if (contentType == null || !contentType.startsWith("image/")) {
             throw new BusinessException(400, "仅支持图片文件上传");
         }
     }
 
+    /**
+     * 解析背景色枚举值
+     *
+     * 1. 若 code 为 null，返回默认蓝色
+     * 2. 根据 code 获取对应的背景色名称
+     */
     private String resolveBackgroundColor(Integer code) {
+        // 1. 未指定背景色时返回默认蓝色
         if (code == null) {
             return BackgroundColor.BLUE.getName();
         }
+
+        // 2. 根据枚举 code 获取背景色名称
         return BackgroundColor.fromCode(code).getName();
     }
 
+    /**
+     * 保存生成的结果图片
+     *
+     * 1. 从结果图片 URL 下载图片数据
+     * 2. 存储图片到文件系统并返回 URL
+     */
     String saveResultImage(String imageUrl, String taskId) {
+        // 1. 从结果图片 URL 下载图片数据
         byte[] imageBytes = imageFetcher.fetch(imageUrl);
+
+        // 2. 保存到存储服务并返回 URL
         String fileName = taskId + "_result.jpg";
         return storageService.store(imageBytes, fileName);
     }
 
+    /**
+     * 将任务标记为失败并持久化
+     *
+     * 1. 设置状态为 FAILED
+     * 2. 记录错误信息
+     * 3. 更新修改时间
+     * 4. 持久化到数据库
+     */
     private void markTaskFailed(PhotoTransformTask task, String errorMessage) {
+        // 1. 设置状态为 FAILED
         task.setStatus(TransformStatus.FAILED);
+
+        // 2. 记录错误信息
         task.setErrorMessage(errorMessage);
+
+        // 3. 更新修改时间
         task.setUpdatedTime(LocalDateTime.now());
+
+        // 4. 持久化到数据库
         taskRepository.save(task);
     }
 
     /**
      * 判断已完成任务是否过期（读路径专用，不写 DB）
+     *
+     * 1. PROCESSING 状态未完成，返回 false
+     * 2. 创建时间为空则返回 false
+     * 3. 计算已过时间是否超过过期阈值
      */
     private boolean isTaskCompletedAndExpired(PhotoTransformTask task) {
+        // 1. PROCESSING 状态未完成，直接返回 false
         if (task.getStatus() == TransformStatus.PROCESSING) {
             return false;
         }
+
+        // 2. 创建时间为空则跳过
         if (task.getCreatedTime() == null) {
             return false;
         }
+
+        // 3. 计算已过时间是否超过过期阈值
         Duration elapsed = Duration.between(task.getCreatedTime(), LocalDateTime.now());
         return elapsed.toHours() >= taskProperties.getExpiryHours();
     }

@@ -4,7 +4,11 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.stereotype.Component;
 
 /**
- * 火山引擎 Seedream 客户端配置
+ * 火山引擎 Seedream API 客户端配置。
+ *
+ * <p>读取 {@code seedream.*} 配置项，包括 API 密钥、Base URL、模型名称、
+ * 默认图像尺寸、响应格式、超时时间、水印开关及组图生成模式。
+ * 建议 API 密钥通过环境变量 {@code ARK_API_KEY} 注入，避免硬编码在配置文件中。</p>
  */
 @Component
 @ConfigurationProperties(prefix = "seedream")

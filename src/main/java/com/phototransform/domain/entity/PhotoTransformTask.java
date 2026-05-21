@@ -19,6 +19,14 @@ import lombok.NoArgsConstructor;
 
 /**
  * 证件照转化任务实体
+ *
+ * 映射数据库 photo_transform_task 表，记录每个证件照转化任务的完整信息。
+ * 任务生命周期：PROCESSING → SUCCESS / FAILED
+ * 实体通过 JPA 自动建表，由 Spring Data JPA 管理持久化。
+ *
+ * @see com.phototransform.enums.TransformStatus
+ * @see com.phototransform.enums.ModelType
+ * @see com.phototransform.repository.PhotoTransformTaskRepository
  */
 @Data
 @Builder

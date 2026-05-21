@@ -83,13 +83,13 @@ public class ApiResponse<T> implements Serializable {
 
     /**
      * 创建失败响应
-     * 
+     *
      * 用于业务处理失败时返回错误信息。
      * 需要指定错误码和错误消息。
-     * 
-     * @param code 错误码
+     *
+     * @param code    错误码
      * @param message 错误消息
-     * @param <T> 数据类型
+     * @param <T>     数据类型
      * @return 失败的 API 响应对象
      */
     public static <T> ApiResponse<T> error(Integer code, String message) {

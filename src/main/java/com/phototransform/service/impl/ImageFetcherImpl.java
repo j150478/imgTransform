@@ -21,14 +21,17 @@ public class ImageFetcherImpl implements ImageFetcher {
      */
     @Override
     public byte[] fetch(String url) {
+        // 1. 创建 URL 对象并打开输入流
         try {
             URL imageUrl = new URL(url);
             try (InputStream is = imageUrl.openStream()) {
+                // 2. 读取完整字节数据
                 byte[] data = StreamUtils.copyToByteArray(is);
                 log.debug("从 {} 下载图片完成, 大小: {} bytes", url, data.length);
                 return data;
             }
         } catch (Exception e) {
+            // 3. 异常时包装为业务异常
             throw new BusinessException(500, "保存结果图片失败: " + e.getMessage(), e);
         }
     }
