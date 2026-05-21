@@ -123,8 +123,8 @@ public class PhotoTransformServiceImpl implements PhotoTransformService {
             } catch (IllegalArgumentException e) {
                 bgColor = BackgroundColor.BLUE;
             }
-            String prompt = promptBuilder.build(bgColor);
-            log.info("[{}] 生成 prompt: {}", taskId, prompt);
+            String prompt = promptBuilder.build(task.getPhotoType(), bgColor);
+            log.info("[{}] 生成 prompt, photoType: {}, bgColor: {}", taskId, task.getPhotoType(), bgColor);
 
             // 3. 将本地图片转为 base64 data URL（Seedream 无法访问 localhost）
             String imageDataUrl;

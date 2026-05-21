@@ -82,6 +82,33 @@ supabase:
     serviceRoleKey: ${SUPABASE_SERVICE_ROLE_KEY}
     bucket: photoX
 
+# Prompt 模板配置
+prompt:
+  templates:
+    id-photo:
+      system: |
+        Turn this photo into a standard ID photo:
+        - Background: solid {name} (RGB {rgb})
+        - Person: centered, facing forward, symmetrical face
+        - Show full head and shoulders
+        - Lighting: even and natural
+        - Clear face, sharp eyes, natural skin texture
+        - Clothes: replace with black suit, white shirt, and black tie
+        - Formal style, neat and professional
+        - Consistent details: ears, shoulders, tie, collar must be aligned and symmetrical
+        - Final style: official passport/ID photo, high resolution, clean and sharp
+      negative: |
+        No artistic effects
+        No filters
+        No distortions
+        No asymmetry in face or body
+        No extra objects or backgrounds
+        No duplicated or missing body parts
+        No clothing artifacts (broken tie, missing collar, misaligned suit)
+        No cropped head or missing shoulders
+        No unrealistic lighting
+        No blurriness or low resolution
+
 # 应用自定义配置
 app:
   # 图片存储配置
