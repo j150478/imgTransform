@@ -185,15 +185,19 @@ src/main/java/com/phototransform/
 ├── repository/
 │   └── PhotoTransformTaskRepository.java       # JPA Repository
 └── service/
+    ├── ImageFetcher.java                       # 图片下载接口
     ├── PhotoTransformService.java              # 转换服务接口
     ├── SeedreamImageService.java               # 图像生成接口
     ├── StorageService.java                     # 文件存储接口
     └── impl/
+        ├── AsyncTaskExecutor.java              # 异步任务执行器
+        ├── ImageFetcherImpl.java               # 图片下载实现
+        ├── LocalStorageServiceImpl.java        # 本地文件存储（dev）
         ├── PhotoTransformServiceImpl.java      # 核心业务逻辑
         ├── SeedreamImageServiceImpl.java        # Seedream API 集成
-        ├── AsyncTaskExecutor.java              # 异步任务执行器
         ├── SupabaseStorageServiceImpl.java     # Supabase Storage 实现（prod）
-        └── LocalStorageServiceImpl.java        # 本地文件存储（dev）
+        ├── TaskIdGenerator.java                # ID 生成器
+        └── StorageUtils.java                   # 存储工具类
 ```
 
 ## 配置说明
@@ -230,8 +234,8 @@ src/main/java/com/phototransform/
 | `modelName` | `doubao-seedream-4-5-251128` | 默认模型 |
 | `defaultSize` | `2K` | 默认图片尺寸 |
 | `defaultResponseFormat` | `url` | 响应格式（url / b64_json） |
-| `connectionTimeout` | `10000` | 连接超时（ms） |
-| `readTimeout` | `60000` | 读取超时（ms） |
+| `connectionTimeout` | `10000` | 连接超时（ms），通过 ArkService builder 生效 |
+| `readTimeout` | `60000` | 读取超时（ms），通过 ArkService builder 生效 |
 
 ### 存储配置（`app.storage.*`）
 
