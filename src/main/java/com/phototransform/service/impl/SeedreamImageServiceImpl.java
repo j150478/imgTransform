@@ -290,8 +290,12 @@ public class SeedreamImageServiceImpl implements SeedreamImageService {
         // 构建 SDK 请求
         GenerateImagesRequest sdkRequest = buildSdkRequest(request, capability);
 
-        log.info("[{}] 调用 Seedream API, 模型: {}, 能力: {}",
-                taskId, getModel(request), capability.getDescription());
+        log.info("[{}] [SEEDREAM_REQUEST] prompt(len: {}): {}, refImages: {}, mode: {}, size: {}, model: {}, capability: {}",
+                taskId, request.getPrompt() != null ? request.getPrompt().length() : 0,
+                request.getPrompt(),
+                request.getReferenceImages() != null ? request.getReferenceImages().size() : 0,
+                request.getMode(), request.getSize(),
+                getModel(request), capability.getDescription());
 
         // 调用 SDK
         ImagesResponse response;

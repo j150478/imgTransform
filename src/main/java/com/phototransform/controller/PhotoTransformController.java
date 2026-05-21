@@ -40,7 +40,10 @@ public class PhotoTransformController {
      */
     @PostMapping("/transform")
     public ApiResponse<PhotoTransformResponse> transform(@Valid @ModelAttribute PhotoTransformRequest request) {
-        log.info("接收到证件照转化请求, modelType: {}, backgroundColor: {}", request.getModelType(), request.getBackgroundColor());
+        log.info("[CONTROLLER] 接收到证件照转化请求, modelType: {}, backgroundColor: {}, photoType: {}, fileName: {}, fileSize: {} bytes",
+                request.getModelType(), request.getBackgroundColor(), request.getPhotoType(),
+                request.getFile() != null ? request.getFile().getOriginalFilename() : "null",
+                request.getFile() != null ? request.getFile().getSize() : 0L);
         PhotoTransformResponse response = photoTransformService.createTransformTask(request);
         return ApiResponse.success(response);
     }

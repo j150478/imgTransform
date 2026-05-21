@@ -91,8 +91,10 @@ public class PhotoTransformServiceImpl implements PhotoTransformService {
                 .updatedTime(LocalDateTime.now())
                 .build();
 
+        log.info("[{}] [DB_BEFORE_SAVE] originalImageUrl: {}, status: {}, modelType: {}, backgroundColor: {}, photoType: {}",
+                taskId, originalImageUrl, task.getStatus(), modelType, bgColorName, task.getPhotoType());
         taskRepository.save(task);
-        log.info("[{}] 任务创建成功, 模型: {}, 背景色: {}", taskId, modelType, bgColorName);
+        log.info("[{}] [DB_AFTER_SAVE] 任务创建成功, 模型: {}, 背景色: {}", taskId, modelType, bgColorName);
 
         // 5. 发布事件，触发异步处理（仅传递 taskId，避免实体泄漏）
         eventPublisher.publishEvent(new TaskCreatedEvent(this, taskId));
