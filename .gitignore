@@ -58,6 +58,10 @@ skills-lock.json
 .claude/skills/to-issues
 .claude/skills/to-prd
 .claude/skills/triage
+.claude/skills/debug-issue
+.claude/skills/explore-codebase
+.claude/skills/refactor-safely
+.claude/skills/review-changes
 .claude/skills/write-a-skill
 .claude/skills/zoom-out
 docs/agents/
