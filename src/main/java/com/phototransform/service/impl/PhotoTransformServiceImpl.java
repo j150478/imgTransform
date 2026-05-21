@@ -104,10 +104,24 @@ public class PhotoTransformServiceImpl implements PhotoTransformService {
                 .build();
     }
 
+    /**
+     * 执行证件照转化处理
+     *
+     * 0. 根据 taskId 从数据库加载任务实体
+     * 1. 检查模型类型
+     * 2. 构建 prompt
+     * 3. 将原始图片转为 base64 data URL
+     * 4. 调用 Seedream 服务
+     * 5. 处理生成结果
+     * 6. 更新任务状态为成功（或失败）
+     */
     @Override
-    public void processTransformTask(PhotoTransformTask task) {
-        String taskId = task.getTaskId();
+    public void processTransformTask(String taskId) {
         log.info("[{}] 开始处理证件照转化任务", taskId);
+
+        // 0. 从数据库加载任务实体
+        PhotoTransformTask task = taskRepository.findById(taskId)
+                .orElseThrow(() -> new BusinessException(404, "任务不存在: " + taskId));
 
         try {
             // 1. 检查模型类型
@@ -221,8 +235,7 @@ public class PhotoTransformServiceImpl implements PhotoTransformService {
         log.info("开始清理过期任务...");
 
         // 1. 清理超时 PROCESSING 任务
-        LocalDateTime timeoutThreshold = LocalDateTime.now()
-                .minusHours((long) taskProperties.getTimeoutHours());
+        LocalDateTime timeoutThreshold = getTimeoutThreshold();
         List<PhotoTransformTask> timedOutTasks = taskRepository
                 .findByStatusAndCreatedTimeBefore(TransformStatus.PROCESSING, timeoutThreshold);
         for (PhotoTransformTask task : timedOutTasks) {
@@ -255,8 +268,7 @@ public class PhotoTransformServiceImpl implements PhotoTransformService {
     @EventListener(ApplicationReadyEvent.class)
     public void cleanupStaleTasksOnStartup() {
         log.info("应用启动，清理残留 PROCESSING 任务...");
-        LocalDateTime threshold = LocalDateTime.now()
-                .minusHours((long) taskProperties.getTimeoutHours());
+        LocalDateTime threshold = getTimeoutThreshold();
         List<PhotoTransformTask> staleTasks = taskRepository
                 .findByStatusAndCreatedTimeBefore(TransformStatus.PROCESSING, threshold);
         for (PhotoTransformTask task : staleTasks) {
@@ -267,6 +279,14 @@ public class PhotoTransformServiceImpl implements PhotoTransformService {
     }
 
     // ==================== 私有方法 ====================
+
+    /**
+     * 计算超时阈值，将 timeoutHours 转为分钟避免 (long) 截断小数（如 0.5 小时 = 30 分钟）
+     */
+    private LocalDateTime getTimeoutThreshold() {
+        long timeoutMinutes = (long) (taskProperties.getTimeoutHours() * 60);
+        return LocalDateTime.now().minusMinutes(timeoutMinutes);
+    }
 
     private void validateRequest(PhotoTransformRequest request) {
         if (request.getFile() == null || request.getFile().isEmpty()) {

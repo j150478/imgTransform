@@ -1,6 +1,5 @@
 package com.phototransform.service;
 
-import com.phototransform.domain.entity.PhotoTransformTask;
 import com.phototransform.dto.PhotoTransformRequest;
 import com.phototransform.dto.PhotoTransformResponse;
 import com.phototransform.dto.PhotoTransformResultResponse;
@@ -26,13 +25,13 @@ public interface PhotoTransformService {
 
     /**
      * 执行证件照转化处理
-     * 
-     * 调用图像处理模型对照片进行证件照转化
+     *
+     * 根据 taskId 从数据库加载任务实体，调用图像处理模型对照片进行证件照转化
      * 该方法应为异步调用，在独立线程或队列中执行
-     * 
-     * @param task 待处理的任务实体，包含原始图片信息和转化配置
+     *
+     * @param taskId 任务唯一标识
      */
-    void processTransformTask(PhotoTransformTask task);
+    void processTransformTask(String taskId);
 
     /**
      * 查询证件照转化结果

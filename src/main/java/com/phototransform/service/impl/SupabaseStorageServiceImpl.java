@@ -36,7 +36,7 @@ public class SupabaseStorageServiceImpl implements StorageService {
     @Override
     public String store(MultipartFile file, String taskId) {
         String originalFilename = file.getOriginalFilename();
-        String extension = extractExtension(originalFilename);
+        String extension = StorageUtils.extractExtension(originalFilename);
         String fileName = ORIGINALS_DIR + "/" + taskId + "_original" + extension;
 
         byte[] data;
@@ -56,7 +56,7 @@ public class SupabaseStorageServiceImpl implements StorageService {
 
     @Override
     public String store(byte[] data, String fileName) {
-        String extension = extractExtension(fileName);
+        String extension = StorageUtils.extractExtension(fileName);
         String contentType = detectContentType(extension);
         String path = RESULTS_DIR + "/" + fileName;
         return upload(path, data, contentType);
@@ -154,13 +154,6 @@ public class SupabaseStorageServiceImpl implements StorageService {
             return "";
         }
         return url.substring(url.indexOf("/object/public/") + "/object/public/".length());
-    }
-
-    private String extractExtension(String filename) {
-        if (filename == null || !filename.contains(".")) {
-            return ".jpg";
-        }
-        return filename.substring(filename.lastIndexOf("."));
     }
 
     private String detectContentType(String extension) {

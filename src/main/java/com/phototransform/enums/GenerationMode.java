@@ -82,36 +82,4 @@ public enum GenerationMode {
         return description;
     }
 
-    /**
-     * 根据 SDK 参数值获取枚举
-     *
-     * @param sdkValue SDK 参数值（"disabled" 或 "auto"）
-     * @return 对应的 GenerationMode 枚举，如果不匹配返回 null
-     */
-    public static GenerationMode fromSdkValue(String sdkValue) {
-        for (GenerationMode mode : values()) {
-            if (mode.sdkValue.equalsIgnoreCase(sdkValue)) {
-                return mode;
-            }
-        }
-        return null;
-    }
-
-    /**
-     * 判断是否为组图模式
-     *
-     * @return true 如果是组图模式（SEQUENTIAL）
-     */
-    public boolean isSequential() {
-        return this == SEQUENTIAL;
-    }
-
-    /**
-     * 判断是否为单图模式
-     *
-     * @return true 如果是单图模式（SINGLE）
-     */
-    public boolean isSingle() {
-        return this == SINGLE;
-    }
 }

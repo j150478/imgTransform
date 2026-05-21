@@ -18,6 +18,7 @@ import okhttp3.Dispatcher;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.PostConstruct;
+import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -63,20 +64,19 @@ public class SeedreamImageServiceImpl implements SeedreamImageService {
      * 初始化 ArkService 客户端。
      *
      * <p>使用配置中的 API Key 和 Base URL 初始化火山引擎 SDK 客户端。
-     * 配置连接池和调度器以优化性能。</p>
+     * 配置连接池、调度器和超时时间以优化性能。</p>
      */
     @PostConstruct
     public void init() {
         log.info("正在初始化 Seedream 图像生成服务...");
         validateConfig();
 
-        ConnectionPool connectionPool = new ConnectionPool(5, 1, TimeUnit.SECONDS);
-        Dispatcher dispatcher = new Dispatcher();
-
         this.arkService = ArkService.builder()
                 .baseUrl(config.getBaseUrl())
-                .dispatcher(dispatcher)
-                .connectionPool(connectionPool)
+                .connectTimeout(Duration.ofMillis(config.getConnectionTimeout()))
+                .timeout(Duration.ofMillis(config.getReadTimeout()))
+                .dispatcher(new Dispatcher())
+                .connectionPool(new ConnectionPool(5, 1, TimeUnit.SECONDS))
                 .apiKey(config.getApiKey())
                 .build();
 
@@ -461,8 +461,6 @@ public class SeedreamImageServiceImpl implements SeedreamImageService {
                 .build();
     }
 
-    /**
-     * 生成任务ID。
     // ==================== 配置获取方法 ====================
 
     /**

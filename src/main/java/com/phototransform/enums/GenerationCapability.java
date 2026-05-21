@@ -153,24 +153,6 @@ public enum GenerationCapability {
     }
 
     /**
-     * 判断是否为文生图能力（无需参考图）
-     *
-     * @return true 如果是 TEXT_TO_IMAGE 或 TEXT_TO_IMAGE_SET
-     */
-    public boolean isTextToImage() {
-        return this == TEXT_TO_IMAGE || this == TEXT_TO_IMAGE_SET;
-    }
-
-    /**
-     * 判断是否需要参考图
-     *
-     * @return true 如果需要至少1张参考图
-     */
-    public boolean requiresReferenceImage() {
-        return referenceImageRequirement > 0;
-    }
-
-    /**
      * 判断是否为组图生成能力
      *
      * @return true 如果 generationMode 是 SEQUENTIAL

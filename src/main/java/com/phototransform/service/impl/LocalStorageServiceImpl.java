@@ -42,7 +42,7 @@ public class LocalStorageServiceImpl implements StorageService {
     @Override
     public String store(MultipartFile file, String taskId) {
         String originalFilename = file.getOriginalFilename();
-        String extension = extractExtension(originalFilename);
+        String extension = StorageUtils.extractExtension(originalFilename);
         String fileName = taskId + "_original" + extension;
 
         Path targetPath = storagePath.resolve(fileName);
@@ -107,10 +107,4 @@ public class LocalStorageServiceImpl implements StorageService {
         return prefix + fileName;
     }
 
-    private String extractExtension(String filename) {
-        if (filename == null || !filename.contains(".")) {
-            return ".jpg";
-        }
-        return filename.substring(filename.lastIndexOf("."));
-    }
 }
