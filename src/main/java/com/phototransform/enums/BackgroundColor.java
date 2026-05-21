@@ -40,12 +40,4 @@ public enum BackgroundColor {
         throw new IllegalArgumentException("无效的背景颜色代码: " + code);
     }
 
-    /**
-     * 生成 prompt 中的背景色描述
-     *
-     * @return 如 "solid blue (RGB 0,112,192)"
-     */
-    public String getPromptDescription() {
-        return "solid " + name + " (RGB " + rgb + ")";
-    }
 }

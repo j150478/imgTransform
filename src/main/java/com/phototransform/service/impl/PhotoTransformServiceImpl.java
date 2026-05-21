@@ -14,6 +14,7 @@ import com.phototransform.enums.GenerationStatus;
 import com.phototransform.enums.ModelType;
 import com.phototransform.enums.TransformStatus;
 import com.phototransform.repository.PhotoTransformTaskRepository;
+import com.phototransform.service.ImageFetcher;
 import com.phototransform.service.PhotoTransformService;
 import com.phototransform.service.SeedreamImageService;
 import com.phototransform.service.StorageService;
@@ -26,17 +27,13 @@ import org.springframework.http.MediaType;
 import org.springframework.http.MediaTypeFactory;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
-import org.springframework.util.StreamUtils;
 
-import java.io.InputStream;
-import java.net.URL;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.Collections;
 import java.util.List;
-import java.util.UUID;
 
 /**
  * 照片转化服务实现类
@@ -54,6 +51,8 @@ public class PhotoTransformServiceImpl implements PhotoTransformService {
     private final AppTaskProperties taskProperties;
     private final ApplicationEventPublisher eventPublisher;
     private final IdPhotoPromptBuilder promptBuilder;
+    private final ImageFetcher imageFetcher;
+    private final TaskIdGenerator taskIdGenerator;
 
     /**
      * 创建证件照转化任务
@@ -71,7 +70,7 @@ public class PhotoTransformServiceImpl implements PhotoTransformService {
         validateRequest(request);
 
         // 2. 生成任务ID
-        String taskId = "PT" + UUID.randomUUID().toString().replace("-", "").substring(0, 16).toUpperCase();
+        String taskId = taskIdGenerator.generate("PT");
 
         // 3. 保存原始图片
         String originalImageUrl = storageService.store(request.getFile(), taskId);
@@ -95,8 +94,8 @@ public class PhotoTransformServiceImpl implements PhotoTransformService {
         taskRepository.save(task);
         log.info("[{}] 任务创建成功, 模型: {}, 背景色: {}", taskId, modelType, bgColorName);
 
-        // 5. 发布事件，触发异步处理
-        eventPublisher.publishEvent(new TaskCreatedEvent(this, task));
+        // 5. 发布事件，触发异步处理（仅传递 taskId，避免实体泄漏）
+        eventPublisher.publishEvent(new TaskCreatedEvent(this, taskId));
 
         // 6. 返回响应
         return PhotoTransformResponse.builder()
@@ -290,16 +289,9 @@ public class PhotoTransformServiceImpl implements PhotoTransformService {
     }
 
     String saveResultImage(String imageUrl, String taskId) {
-        try {
-            URL url = new URL(imageUrl);
-            try (InputStream is = url.openStream()) {
-                byte[] imageBytes = StreamUtils.copyToByteArray(is);
-                String fileName = taskId + "_result.jpg";
-                return storageService.store(imageBytes, fileName);
-            }
-        } catch (Exception e) {
-            throw new BusinessException(500, "保存结果图片失败: " + e.getMessage(), e);
-        }
+        byte[] imageBytes = imageFetcher.fetch(imageUrl);
+        String fileName = taskId + "_result.jpg";
+        return storageService.store(imageBytes, fileName);
     }
 
     private void markTaskFailed(PhotoTransformTask task, String errorMessage) {

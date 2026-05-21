@@ -21,7 +21,6 @@ import javax.annotation.PostConstruct;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -56,6 +55,7 @@ public class SeedreamImageServiceImpl implements SeedreamImageService {
     private static final int DEFAULT_SEQUENTIAL_COUNT = 4;
 
     private final SeedreamClientConfig config;
+    private final TaskIdGenerator taskIdGenerator;
 
     private ArkService arkService;
 
@@ -101,7 +101,7 @@ public class SeedreamImageServiceImpl implements SeedreamImageService {
 
     @Override
     public ImageGenerationResult generate(ImageGenerationRequest request) {
-        String taskId = generateTaskId();
+        String taskId = taskIdGenerator.generate("SD");
         log.info("[{}] 开始图像生成任务", taskId);
 
         try {
@@ -126,7 +126,7 @@ public class SeedreamImageServiceImpl implements SeedreamImageService {
 
     @Override
     public ImageGenerationResult generateWithCapability(ImageGenerationRequest request, GenerationCapability capability) {
-        String taskId = generateTaskId();
+        String taskId = taskIdGenerator.generate("SD");
         log.info("[{}] 开始指定能力生成任务: {}", taskId, capability.getDescription());
 
         try {
@@ -463,15 +463,6 @@ public class SeedreamImageServiceImpl implements SeedreamImageService {
 
     /**
      * 生成任务ID。
-     *
-     * <p>生成唯一的任务标识符。</p>
-     *
-     * @return 任务ID，格式：SD + 16位大写字母数字
-     */
-    private String generateTaskId() {
-        return "SD" + UUID.randomUUID().toString().replace("-", "").substring(0, 16).toUpperCase();
-    }
-
     // ==================== 配置获取方法 ====================
 
     /**
