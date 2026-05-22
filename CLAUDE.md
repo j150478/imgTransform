@@ -4,6 +4,14 @@
 
 这是一个基于 Spring Boot 的证件照转化后端服务（Photo Transform Service），集成了 Seedream API 提供 AI 图像生成和转换功能。
 
+## Quick Start
+
+```bash
+mvn clean compile       # 编译
+mvn spring-boot:run     # 开发模式（端口 8081，H2 + 本地存储）
+mvn test                # 运行所有测试
+```
+
 ## Agent skills
 
 ### Issue tracker
@@ -56,3 +64,8 @@ Fall back to Grep/Glob/Read **only** when the graph doesn't cover what you need.
 2. Use `detect_changes` for code review.
 3. Use `get_affected_flows` to understand impact.
 4. Use `query_graph` pattern="tests_for" to check coverage.
+
+## Gotchas
+
+- code-review-graph MCP 通过 uvx 从 PyPI 下载运行，需终端代理可用，否则 MCP 启动报 `-32000: Connection closed`
+- settings.json 配置了 Bash deny 黑名单（rm -r*、git reset --hard、git push --force、sudo、curl/wget | sh 管道执行等），详见 `.claude/settings.json`
