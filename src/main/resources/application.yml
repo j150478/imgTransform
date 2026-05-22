@@ -128,3 +128,13 @@ app:
     expiry-hours: 24
     # 清理过期任务cron表达式（每小时）
     cleanup-cron: 0 0 * * * ?
+
+# Redis 配置
+redis:
+  host: localhost
+  port: 6379
+
+# JWT 配置
+jwt:
+  secret: ${JWT_SECRET:phototransform-jwt-secret-key-2026}
+  expiration-days: 7

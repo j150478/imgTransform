@@ -16,6 +16,7 @@ import com.phototransform.enums.TransformStatus;
 import com.phototransform.repository.PhotoTransformTaskRepository;
 import com.phototransform.service.ImageFetcher;
 import com.phototransform.service.PhotoTransformService;
+import com.phototransform.service.QuotaService;
 import com.phototransform.service.SeedreamImageService;
 import com.phototransform.service.StorageService;
 import lombok.RequiredArgsConstructor;
@@ -53,30 +54,35 @@ public class PhotoTransformServiceImpl implements PhotoTransformService {
     private final IdPhotoPromptBuilder promptBuilder;
     private final ImageFetcher imageFetcher;
     private final TaskIdGenerator taskIdGenerator;
+    private final QuotaService quotaService;
 
     /**
      * 创建证件照转化任务
      *
      * 1. 校验请求参数
      * 2. 生成任务ID
-     * 3. 保存原始图片
-     * 4. 创建任务记录
-     * 5. 触发异步处理
-     * 6. 返回任务响应
+     * 3. 检查并扣减用户额度
+     * 4. 保存原始图片
+     * 5. 创建任务记录（包含 userId）
+     * 6. 发布事件，触发异步处理
+     * 7. 返回任务响应
      */
     @Override
-    public PhotoTransformResponse createTransformTask(PhotoTransformRequest request) {
+    public PhotoTransformResponse createTransformTask(PhotoTransformRequest request, Long userId) {
         // 1. 校验参数
         validateRequest(request);
 
         // 2. 生成任务ID
         String taskId = taskIdGenerator.generate("PT");
 
-        // 3. 保存原始图片
+        // 3. 检查并扣减用户额度
+        quotaService.checkAndDeduct(userId, taskId);
+
+        // 4. 保存原始图片
         String originalImageUrl = storageService.store(request.getFile(), taskId);
         log.info("[{}] 原始图片已保存: {}", taskId, originalImageUrl);
 
-        // 4. 创建任务记录
+        // 5. 创建任务记录（包含 userId）
         ModelType modelType = request.getModelType() != null ? request.getModelType() : ModelType.SEEDREAM_45;
         String bgColorName = resolveBackgroundColor(request.getBackgroundColor());
 
@@ -87,19 +93,20 @@ public class PhotoTransformServiceImpl implements PhotoTransformService {
                 .modelType(modelType)
                 .backgroundColor(bgColorName)
                 .photoType(request.getPhotoType())
+                .userId(userId)
                 .createdTime(LocalDateTime.now())
                 .updatedTime(LocalDateTime.now())
                 .build();
 
-        log.info("[{}] [DB_BEFORE_SAVE] originalImageUrl: {}, status: {}, modelType: {}, backgroundColor: {}, photoType: {}",
-                taskId, originalImageUrl, task.getStatus(), modelType, bgColorName, task.getPhotoType());
+        log.info("[{}] [DB_BEFORE_SAVE] userId: {}, originalImageUrl: {}, status: {}, modelType: {}, backgroundColor: {}, photoType: {}",
+                taskId, userId, originalImageUrl, task.getStatus(), modelType, bgColorName, task.getPhotoType());
         taskRepository.save(task);
-        log.info("[{}] [DB_AFTER_SAVE] 任务创建成功, 模型: {}, 背景色: {}", taskId, modelType, bgColorName);
+        log.info("[{}] [DB_AFTER_SAVE] 任务创建成功, 用户: {}, 模型: {}, 背景色: {}", taskId, userId, modelType, bgColorName);
 
-        // 5. 发布事件，触发异步处理（仅传递 taskId，避免实体泄漏）
+        // 6. 发布事件，触发异步处理（仅传递 taskId，避免实体泄漏）
         eventPublisher.publishEvent(new TaskCreatedEvent(this, taskId));
 
-        // 6. 返回响应
+        // 7. 返回响应
         return PhotoTransformResponse.builder()
                 .taskId(taskId)
                 .status(TransformStatus.PROCESSING)

@@ -64,6 +64,16 @@ app:
     expiry-hours: 1
     cleanup-cron: 0 */5 * * * ?
 
+# Redis 配置
+redis:
+  host: localhost
+  port: 6379
+
+# JWT 配置
+jwt:
+  secret: ${JWT_SECRET:phototransform-jwt-secret-key-2026}
+  expiration-days: 7
+
 # CORS 跨域配置（开发环境允许所有来源）
 cors:
   allowed-origins: "*"

@@ -89,6 +89,12 @@ public class PhotoTransformTask {
     private String errorMessage;
 
     /**
+     * 用户 ID（关联 User.id）
+     */
+    @Column
+    private Long userId;
+
+    /**
      * 任务创建时间
      */
     @Column

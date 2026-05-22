@@ -7,6 +7,7 @@ import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestAttribute;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -36,15 +37,18 @@ public class PhotoTransformController {
      * 提交证件照转化任务
      *
      * @param request 转化请求参数
+     * @param userId  用户 ID（由 AuthInterceptor 写入请求属性）
      * @return 任务ID和状态
      */
     @PostMapping("/transform")
-    public ApiResponse<PhotoTransformResponse> transform(@Valid @ModelAttribute PhotoTransformRequest request) {
-        log.info("[CONTROLLER] 接收到证件照转化请求, modelType: {}, backgroundColor: {}, photoType: {}, fileName: {}, fileSize: {} bytes",
-                request.getModelType(), request.getBackgroundColor(), request.getPhotoType(),
+    public ApiResponse<PhotoTransformResponse> transform(
+            @Valid @ModelAttribute PhotoTransformRequest request,
+            @RequestAttribute("userId") Long userId) {
+        log.info("[CONTROLLER] 用户 {} 提交证件照转化请求, modelType: {}, backgroundColor: {}, photoType: {}, fileName: {}, fileSize: {} bytes",
+                userId, request.getModelType(), request.getBackgroundColor(), request.getPhotoType(),
                 request.getFile() != null ? request.getFile().getOriginalFilename() : "null",
                 request.getFile() != null ? request.getFile().getSize() : 0L);
-        PhotoTransformResponse response = photoTransformService.createTransformTask(request);
+        PhotoTransformResponse response = photoTransformService.createTransformTask(request, userId);
         return ApiResponse.success(response);
     }
 

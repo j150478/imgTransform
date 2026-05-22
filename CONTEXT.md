@@ -49,3 +49,27 @@ Supabase 的连接池代理层（transaction 模式）。应用侧通过 Shared 
 
 ### Service Role Key
 Supabase 服务端 API Key，拥有最高权限。仅在服务端使用，严禁暴露给前端。用于 Storage REST API 调用。
+
+### User
+用户账号，以手机号作为登录凭证。注册时创建，通过 JWT 中间件认证后注入到请求上下文。
+
+### Quota
+用户可用转化次数的余额。初始注册获得 1 次免费额度，后续通过支付充值增加。扣减使用悲观锁（SELECT FOR UPDATE）保证并发安全。
+
+### Remaining
+额度中的剩余可用次数。免费赠送和付费充值合并为一个 remaining 字段，由服务层统一扣减。扣减前检查 remaining > 0。
+
+### PaymentRecord
+一次充值交易的记录。记录金额、获得次数、支付状态。支付 SDK 未对接前使用 Mock 实现，模拟支付成功。
+
+### AuthInterceptor
+Spring MVC HandlerInterceptor，拦截认证路由。从 Authorization header 提取 JWT，解析 userId 并注入 request attribute，Controller 通过 request.getAttribute("userId") 获取。
+
+### JWT Blacklist
+登出时将 JWT 的 jti（token 唯一 ID）写入 Redis 黑名单，key=`jwt:black:{jti}`，TTL 与 JWT 剩余有效期一致。Interceptor 验证时先查黑名单，命中则拒绝请求。
+
+### MockSmsService
+SMS 短信验证码的占位实现。直接返回发送成功，不调用真实短信服务商。后续替换为真实 SDK 时仅需替换这一层实现。
+
+### MockPaymentService
+支付 SDK 的占位实现。直接返回支付成功，并生成模拟的第三方交易流水号。后续替换真实支付 SDK 时仅需替换这一层实现。
