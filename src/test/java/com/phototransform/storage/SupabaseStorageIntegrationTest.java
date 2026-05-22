@@ -1,7 +1,15 @@
 package com.phototransform.storage;
 
 import com.jayway.jsonpath.JsonPath;
+import com.phototransform.common.JwtUtil;
+import com.phototransform.domain.entity.User;
+import com.phototransform.domain.entity.UserQuota;
+import com.phototransform.repository.UserQuotaRepository;
+import com.phototransform.repository.UserRepository;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.api.TestInstance.Lifecycle;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -12,6 +20,7 @@ import org.springframework.test.web.servlet.MvcResult;
 
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.time.LocalDateTime;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
@@ -23,6 +32,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  */
 @SpringBootTest
 @AutoConfigureMockMvc
+@TestInstance(Lifecycle.PER_CLASS)
 @TestPropertySource(properties = {
         "spring.profiles.active=prod",
         "app.storage.type=supabase"
@@ -32,7 +42,40 @@ class SupabaseStorageIntegrationTest {
     @Autowired
     private MockMvc mockMvc;
 
+    @Autowired
+    private JwtUtil jwtUtil;
+
+    @Autowired
+    private UserRepository userRepository;
+
+    @Autowired
+    private UserQuotaRepository userQuotaRepository;
+
     private static final String TEST_IMAGE_PATH = "/Users/feiyu/Downloads/wo2.png";
+
+    private String authToken;
+
+    @BeforeAll
+    void setUp() {
+        String phone = "13800138" + String.format("%05d", System.currentTimeMillis() % 100000);
+        User user = User.builder()
+                .phone(phone)
+                .status(com.phototransform.enums.UserStatus.ACTIVE)
+                .createdTime(LocalDateTime.now())
+                .updatedTime(LocalDateTime.now())
+                .build();
+        user = userRepository.save(user);
+
+        UserQuota quota = UserQuota.builder()
+                .userId(user.getId())
+                .remaining(10)
+                .createdTime(LocalDateTime.now())
+                .updatedTime(LocalDateTime.now())
+                .build();
+        userQuotaRepository.save(quota);
+
+        authToken = jwtUtil.generateToken(user.getId());
+    }
 
     /**
      * 模拟浏览器前端上传图片 → 验证 originalImageUrl 是 Supabase 公开 URL
@@ -46,7 +89,8 @@ class SupabaseStorageIntegrationTest {
 
         MvcResult result = mockMvc.perform(multipart("/api/photo/transform")
                         .file(file)
-                        .param("backgroundColor", "1"))
+                        .param("backgroundColor", "1")
+                        .header("Authorization", "Bearer " + authToken))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.code").value(200))
                 .andExpect(jsonPath("$.data.taskId").isNotEmpty())
@@ -65,7 +109,8 @@ class SupabaseStorageIntegrationTest {
 
         while (System.currentTimeMillis() < deadline) {
             MvcResult queryResult = mockMvc.perform(get("/api/photo/result")
-                            .param("taskId", taskId))
+                            .param("taskId", taskId)
+                            .header("Authorization", "Bearer " + authToken))
                     .andExpect(status().isOk())
                     .andReturn();
 

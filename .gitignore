@@ -65,3 +65,6 @@ skills-lock.json
 .claude/skills/write-a-skill
 .claude/skills/zoom-out
 docs/agents/
+
+# Test uploads
+test-uploads/
