@@ -2,13 +2,12 @@ package com.phototransform.service.impl;
 
 import com.phototransform.common.BusinessException;
 import com.phototransform.domain.entity.PaymentRecord;
-import com.phototransform.domain.entity.UserQuota;
 import com.phototransform.dto.PaymentRequest;
 import com.phototransform.dto.PaymentResponse;
 import com.phototransform.enums.PayStatus;
 import com.phototransform.repository.PaymentRecordRepository;
-import com.phototransform.repository.UserQuotaRepository;
 import com.phototransform.service.PaymentService;
+import com.phototransform.service.QuotaService;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -23,7 +22,7 @@ import java.util.UUID;
  * Mock 支付服务实现
  *
  * 在真实支付 SDK 对接前，模拟充值流程：
- * 校验参数 -> 查询额度 -> 创建支付记录 -> 累加额度 -> 返回结果。
+ * 校验参数 -> 创建支付记录 -> 调用 quotaService 增加额度 -> 返回结果。
  * 充值直接标记 SUCCESS，不走第三方支付回调。
  *
  * @see com.phototransform.service.PaymentService
@@ -33,7 +32,7 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class MockPaymentServiceImpl implements PaymentService {
 
-    private final UserQuotaRepository userQuotaRepository;
+    private final QuotaService quotaService;
     private final PaymentRecordRepository paymentRecordRepository;
 
     /**
@@ -41,13 +40,10 @@ public class MockPaymentServiceImpl implements PaymentService {
      *
      * 步骤：
      * 1. 校验参数 - amount 必须大于 0，userId 不能为空
-     * 2. 根据 userId 查询用户额度记录（UserQuota）
-     * 3. 额度记录不存在时抛 BusinessException(400, "用户额度账户不存在")
-     * 4. 创建 PaymentRecord，payStatus 直接设为 SUCCESS，tradeNo 生成模拟流水号
-     * 5. 持久化 PaymentRecord
-     * 6. 累加额度：quota.remaining += credits（1 元 = 1 次），充值无并发扣减问题，使用普通 update
-     * 7. 更新 quota.updatedTime 为当前时间，保存 quota
-     * 8. 构造并返回 PaymentResponse
+     * 2. 创建 PaymentRecord，payStatus 直接设为 SUCCESS，tradeNo 生成模拟流水号
+     * 3. 持久化 PaymentRecord
+     * 4. 增加用户额度：quotaService.increase(userId, credits) 内部使用悲观锁保证并发安全
+     * 5. 构造并返回 PaymentResponse
      *
      * @param request 充值请求，包含 userId、amount、payMethod
      * @return 充值响应，包含流水号、金额、获得次数和剩余次数
@@ -68,16 +64,7 @@ public class MockPaymentServiceImpl implements PaymentService {
             throw new BusinessException(400, "用户 ID 不能为空");
         }
 
-        // 2. 查询用户额度记录
-        UserQuota quota = userQuotaRepository.findByUserId(userId);
-
-        // 3. 额度记录不存在时抛出异常
-        if (quota == null) {
-            log.warn("[PAYMENT] 用户额度账户不存在, userId: {}", userId);
-            throw new BusinessException(400, "用户额度账户不存在");
-        }
-
-        // 4. 计算获得次数（1 元 = 1 次），创建支付记录
+        // 2. 计算获得次数（1 元 = 1 次），创建支付记录
         int credits = amount.intValue();
         String tradeNo = "MOCK_" + UUID.randomUUID().toString().replace("-", "").substring(0, 16).toUpperCase();
         LocalDateTime now = LocalDateTime.now();
@@ -92,27 +79,20 @@ public class MockPaymentServiceImpl implements PaymentService {
                 .createdTime(now)
                 .build();
 
-        // 5. 保存支付记录
+        // 3. 保存支付记录
         paymentRecordRepository.save(record);
         log.info("[PAYMENT] 支付记录已创建, tradeNo: {}, amount: {}, credits: {}, userId: {}",
                 tradeNo, amount, credits, userId);
 
-        // 6. 累加额度
-        int remainingBefore = quota.getRemaining();
-        quota.setRemaining(remainingBefore + credits);
+        // 4. 增加用户额度（使用悲观锁保证并发安全）
+        int remainingAfter = quotaService.increase(userId, credits);
 
-        // 7. 更新更新时间，保存额度
-        quota.setUpdatedTime(now);
-        userQuotaRepository.save(quota);
-        log.info("[PAYMENT] 额度已更新, userId: {}, before: {}, after: {}",
-                userId, remainingBefore, quota.getRemaining());
-
-        // 8. 构造并返回充值响应
+        // 5. 构造并返回充值响应
         return PaymentResponse.builder()
                 .tradeNo(tradeNo)
                 .amount(amount)
                 .credits(credits)
-                .remainingAfter(quota.getRemaining())
+                .remainingAfter(remainingAfter)
                 .build();
     }
 }

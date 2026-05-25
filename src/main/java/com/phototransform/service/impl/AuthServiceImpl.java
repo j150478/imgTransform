@@ -3,24 +3,22 @@ package com.phototransform.service.impl;
 import com.phototransform.common.BusinessException;
 import com.phototransform.common.JwtUtil;
 import com.phototransform.domain.entity.User;
-import com.phototransform.domain.entity.UserQuota;
 import com.phototransform.dto.AuthResponse;
 import com.phototransform.dto.LoginRequest;
 import com.phototransform.dto.SendCodeRequest;
 import com.phototransform.enums.UserStatus;
-import com.phototransform.repository.UserQuotaRepository;
 import com.phototransform.repository.UserRepository;
 import com.phototransform.service.AuthService;
+import com.phototransform.service.QuotaService;
+import java.time.Duration;
+import java.time.LocalDateTime;
+import java.util.Date;
+import java.util.Random;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
-import java.time.Duration;
-import java.time.LocalDateTime;
-import java.util.Date;
-import java.util.Random;
 
 /**
  * 认证服务实现
@@ -51,7 +49,7 @@ public class AuthServiceImpl implements AuthService {
     private static final int CODE_LENGTH = 6;
 
     private final UserRepository userRepository;
-    private final UserQuotaRepository userQuotaRepository;
+    private final QuotaService quotaService;
     private final JwtUtil jwtUtil;
     private final MockSmsService mockSmsService;
     private final RedisTemplate<String, String> redisTemplate;
@@ -89,14 +87,20 @@ public class AuthServiceImpl implements AuthService {
 
         // 4. 验证码存入 Redis，5 分钟过期
         String redisKey = SMS_KEY_PREFIX + phone;
-        redisTemplate.opsForValue().set(redisKey, code, Duration.ofMinutes(CODE_TTL_MINUTES));
-        log.info("[AUTH] 验证码已存入 Redis, key: {}, TTL: {} 分钟", redisKey, CODE_TTL_MINUTES);
+        redisTemplate
+            .opsForValue()
+            .set(redisKey, code, Duration.ofMinutes(CODE_TTL_MINUTES));
+        log.info(
+            "[AUTH] 验证码已存入 Redis, key: {}, TTL: {} 分钟",
+            redisKey,
+            CODE_TTL_MINUTES
+        );
 
         // 5. 返回成功响应
         return AuthResponse.builder()
-                .success(true)
-                .message("验证码已发送")
-                .build();
+            .success(true)
+            .message("验证码已发送")
+            .build();
     }
 
     /**
@@ -110,7 +114,7 @@ public class AuthServiceImpl implements AuthService {
      * 5. 验证码不匹配，抛 BusinessException(400, "验证码错误")
      * 6. 验证通过后删除 Redis 中的验证码
      * 7. 根据手机号查询用户
-     * 8. 用户不存在，创建新用户（status=ACTIVE）并创建额度记录（remaining=1）
+     * 8. 用户不存在，创建新用户（status=ACTIVE）并通过 quotaService 创建初始额度
      * 9. 用户存在但 status=INACTIVE，抛 BusinessException(403, "账号已被禁用")
      * 10. 生成 JWT token
      * 11. 返回 AuthResponse（success=true, token=token, userId=user.getId()）
@@ -164,30 +168,35 @@ public class AuthServiceImpl implements AuthService {
         if (user == null) {
             LocalDateTime now = LocalDateTime.now();
             user = User.builder()
-                    .phone(phone)
-                    .status(UserStatus.ACTIVE)
-                    .createdTime(now)
-                    .updatedTime(now)
-                    .build();
+                .phone(phone)
+                .status(UserStatus.ACTIVE)
+                .createdTime(now)
+                .updatedTime(now)
+                .build();
             user = userRepository.save(user);
-            log.info("[AUTH] 新用户注册成功, userId: {}, phone: {}", user.getId(), phone);
+            log.info(
+                "[AUTH] 新用户注册成功, userId: {}, phone: {}",
+                user.getId(),
+                phone
+            );
 
             // 创建默认额度记录（remaining=1）
-            UserQuota quota = UserQuota.builder()
-                    .userId(user.getId())
-                    .remaining(1)
-                    .createdTime(now)
-                    .updatedTime(now)
-                    .build();
-            userQuotaRepository.save(quota);
-            log.info("[AUTH] 新用户额度已创建, userId: {}, remaining: 1", user.getId());
+            quotaService.create(user.getId());
         } else {
             // 9. 用户存在但被禁用
             if (UserStatus.INACTIVE.equals(user.getStatus())) {
-                log.warn("[AUTH] 账号已被禁用, userId: {}, phone: {}", user.getId(), phone);
+                log.warn(
+                    "[AUTH] 账号已被禁用, userId: {}, phone: {}",
+                    user.getId(),
+                    phone
+                );
                 throw new BusinessException(403, "账号已被禁用");
             }
-            log.info("[AUTH] 用户已存在, userId: {}, phone: {}", user.getId(), phone);
+            log.info(
+                "[AUTH] 用户已存在, userId: {}, phone: {}",
+                user.getId(),
+                phone
+            );
         }
 
         // 10. 生成 JWT token
@@ -196,11 +205,11 @@ public class AuthServiceImpl implements AuthService {
 
         // 11. 返回登录成功响应
         return AuthResponse.builder()
-                .success(true)
-                .message("登录成功")
-                .token(token)
-                .userId(user.getId())
-                .build();
+            .success(true)
+            .message("登录成功")
+            .token(token)
+            .userId(user.getId())
+            .build();
     }
 
     /**
@@ -227,8 +236,14 @@ public class AuthServiceImpl implements AuthService {
         // 3. 剩余时间大于 0，加入黑名单
         if (ttlMillis > 0) {
             String blacklistKey = BLACKLIST_KEY_PREFIX + jti;
-            redisTemplate.opsForValue().set(blacklistKey, "1", Duration.ofMillis(ttlMillis));
-            log.info("[AUTH] token 已加入黑名单, jti: {}, TTL: {} 毫秒", jti, ttlMillis);
+            redisTemplate
+                .opsForValue()
+                .set(blacklistKey, "1", Duration.ofMillis(ttlMillis));
+            log.info(
+                "[AUTH] token 已加入黑名单, jti: {}, TTL: {} 毫秒",
+                jti,
+                ttlMillis
+            );
         } else {
             // 4. token 已过期，直接返回
             log.info("[AUTH] token 已过期，无需加入黑名单, jti: {}", jti);

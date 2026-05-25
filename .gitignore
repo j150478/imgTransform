@@ -68,3 +68,5 @@ docs/agents/
 
 # Test uploads
 test-uploads/
+.DS_Store
+
