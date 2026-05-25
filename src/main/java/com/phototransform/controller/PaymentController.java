@@ -23,7 +23,7 @@ import javax.validation.Valid;
  * userId 通过 AuthInterceptor 从请求上下文中注入，防止客户端伪造。
  *
  * @see com.phototransform.service.PaymentService
- * @see com.phototransform.service.impl.MockPaymentServiceImpl
+ * @see com.phototransform.service.impl.mock.MockPaymentServiceImpl
  */
 @Slf4j
 @RestController

@@ -9,7 +9,7 @@ import com.phototransform.dto.PaymentResponse;
  * 定义充值相关的业务操作。
  * 当前为 Mock 实现，尚无真实支付 SDK 对接。
  *
- * @see com.phototransform.service.impl.MockPaymentServiceImpl
+ * @see com.phototransform.service.impl.mock.MockPaymentServiceImpl
  */
 public interface PaymentService {
 

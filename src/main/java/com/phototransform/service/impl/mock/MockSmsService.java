@@ -1,4 +1,4 @@
-package com.phototransform.service.impl;
+package com.phototransform.service.impl.mock;
 
 import com.phototransform.service.SmsService;
 import lombok.extern.slf4j.Slf4j;

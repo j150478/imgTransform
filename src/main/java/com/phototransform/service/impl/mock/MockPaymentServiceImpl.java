@@ -1,4 +1,4 @@
-package com.phototransform.service.impl;
+package com.phototransform.service.impl.mock;
 
 import com.phototransform.common.BusinessException;
 import com.phototransform.domain.entity.PaymentRecord;

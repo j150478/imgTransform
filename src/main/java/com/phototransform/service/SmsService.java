@@ -6,7 +6,7 @@ package com.phototransform.service;
  * 定义短信验证码发送的通用契约。
  * 当前使用 Mock 实现模拟发送，后续可对接真实短信渠道。
  *
- * @see com.phototransform.service.impl.MockSmsService
+ * @see com.phototransform.service.impl.mock.MockSmsService
  */
 public interface SmsService {
 
