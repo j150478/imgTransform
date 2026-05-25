@@ -10,6 +10,7 @@ import com.phototransform.enums.UserStatus;
 import com.phototransform.repository.UserRepository;
 import com.phototransform.service.AuthService;
 import com.phototransform.service.QuotaService;
+import com.phototransform.service.SmsService;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.Date;
@@ -51,7 +52,7 @@ public class AuthServiceImpl implements AuthService {
     private final UserRepository userRepository;
     private final QuotaService quotaService;
     private final JwtUtil jwtUtil;
-    private final MockSmsService mockSmsService;
+    private final SmsService smsService;
     private final RedisTemplate<String, String> redisTemplate;
 
     /**
@@ -60,7 +61,7 @@ public class AuthServiceImpl implements AuthService {
      * 步骤：
      * 1. 校验手机号格式（正则 ^1[3-9]\\d{9}$），不合法抛 BusinessException(400, "手机号格式不正确")
      * 2. 生成 6 位随机数字验证码
-     * 3. 调用 mockSmsService.sendSms(phone, code) 模拟发送
+     * 3. 调用 smsService.sendSms(phone, code) 模拟发送
      * 4. 验证码存入 Redis，key=sms:{phone}，value=code，TTL=5 分钟
      * 5. 返回 AuthResponse（success=true, message="验证码已发送"）
      *
@@ -83,7 +84,7 @@ public class AuthServiceImpl implements AuthService {
         log.info("[AUTH] 生成验证码, phone: {}, code: {}", phone, code);
 
         // 3. 模拟发送短信
-        mockSmsService.sendSms(phone, code);
+        smsService.sendSms(phone, code);
 
         // 4. 验证码存入 Redis，5 分钟过期
         String redisKey = SMS_KEY_PREFIX + phone;
