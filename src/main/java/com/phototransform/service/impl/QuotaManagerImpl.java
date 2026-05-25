@@ -62,7 +62,7 @@ public class QuotaManagerImpl implements QuotaService {
     }
 
     /**
-     * 增加用户额度
+     * 为用户额度增加 credits 次
      *
      * 1. 悲观锁查询用户额度记录
      * 2. 额度账户不存在则抛出异常
@@ -70,12 +70,12 @@ public class QuotaManagerImpl implements QuotaService {
      * 4. 返回累加后的剩余次数
      *
      * @param userId  用户 ID
-     * @param credits 增加次数
+     * @param credits 增加的次数
      * @return 累加后的剩余次数
      * @throws BusinessException 当额度账户不存在时抛出
      */
     @Override
-    public int increase(Long userId, int credits) {
+    public int addCredits(Long userId, int credits) {
         // 1. 悲观锁查询用户额度记录（SELECT FOR UPDATE）
         UserQuota quota = userQuotaRepository.findByUserIdForUpdate(userId);
 

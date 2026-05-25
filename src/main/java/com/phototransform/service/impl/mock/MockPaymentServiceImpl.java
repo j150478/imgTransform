@@ -42,7 +42,7 @@ public class MockPaymentServiceImpl implements PaymentService {
      * 1. 校验参数 - amount 必须大于 0，userId 不能为空
      * 2. 创建 PaymentRecord，payStatus 直接设为 SUCCESS，tradeNo 生成模拟流水号
      * 3. 持久化 PaymentRecord
-     * 4. 增加用户额度：quotaService.increase(userId, credits) 内部使用悲观锁保证并发安全
+     * 4. 增加用户额度：quotaService.addCredits(userId, credits) 内部使用悲观锁保证并发安全
      * 5. 构造并返回 PaymentResponse
      *
      * @param request 充值请求，包含 userId、amount、payMethod
@@ -85,7 +85,7 @@ public class MockPaymentServiceImpl implements PaymentService {
                 tradeNo, amount, credits, userId);
 
         // 4. 增加用户额度（使用悲观锁保证并发安全）
-        int remainingAfter = quotaService.increase(userId, credits);
+        int remainingAfter = quotaService.addCredits(userId, credits);
 
         // 5. 构造并返回充值响应
         return PaymentResponse.builder()
