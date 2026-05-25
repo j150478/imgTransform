@@ -14,6 +14,7 @@ src/main/java/com/phototransform/
 ├── repository/          # 数据访问层（JPA Repository + 派生查询）
 └── service/             # 业务逻辑层（接口和实现）
     └── impl/            # 服务实现类
+        └── mock/        # Mock 占位实现（SmsService、PaymentService）
 ```
 
 ## 核心组件
@@ -32,50 +33,59 @@ src/main/java/com/phototransform/
    - `@EventListener(ApplicationReadyEvent)` 启动时清理残留任务
 
 **3. SeedreamImageService / Impl** — 火山引擎 Seedream API 集成
-   - 基于 `doubao-seedream-4.5` 模型，使用 `volcengine-java-sdk-ark-runtime`
-   - 自动识别生成能力（文生图/图生图/多图生图 × 单图/组图）
-   - 参数校验（prompt ≤ 2000 字符、参考图 ≤ 14 张、尺寸格式等）
-   - 响应解析：顶层 error 检查 → 逐图 url/b64Json 判空 → SUCCESS/PARTIAL_SUCCESS/FAILED
-   - 默认尺寸 `2K`（图生图最低要求 3,686,400 像素）
+   - 负责请求校验、能力自动识别、能力匹配验证等业务逻辑
+   - SDK 调用委托给 `SeedreamClient` 适配层，不直接接触 ArkService
 
-**4. IdPhotoPromptBuilder** — Prompt 模板构建器
+**4. SeedreamClient / Impl** — Seedream SDK 适配层
+   - 封装 ArkService 生命周期（`@PostConstruct` 初始化）
+   - SDK 请求构建（DTO → GenerateImagesRequest）和响应解析（ImagesResponse → DTO）
+   - 错误内部消化，通过 `ImageGenerationResult.status==FAILED` 通知调用方
+   - 不暴露任何 SDK 类型到接口外，所有交互使用自有 DTO
+
+**5. IdPhotoPromptBuilder** — Prompt 模板构建器
    - `@Component` + `@ConfigurationProperties(prefix = "prompt")`，从 application.yml 加载 prompt 模板
    - 模板按 photoType 路由（key 不存在时 fallback 到 id-photo）
    - 模板分 system（正面指令）和 negative（负面约束）两段，支持 `{name}` / `{rgb}` 占位符
 
-**5. AsyncTaskExecutor** — 异步任务执行器
+**6. QuotaService / QuotaManagerImpl** — 用户额度管理
+   - 统一管理额度扣减（checkAndDeduct）、增加（addCredits）和初始化创建（create）
+   - 独占 `UserQuotaRepository`，外部模块不直接操作额度表
+   - 扣减和增加均使用悲观锁（`PESSIMISTIC_WRITE`），解决并发充值竞态问题
+   - 增加和创建方法不带 `@Transactional`，由调用方控制事务边界
+
+**7. AsyncTaskExecutor** — 异步任务执行器
    - `@EventListener` 监听 `TaskCreatedEvent`
    - 事件仅传 taskId，不传实体（避免 JPA 实体泄漏到事件层）
    - 不注入 Repository，委托 Service 内部加载实体并异步处理
    - `@Async("taskExecutor")` 在线程池中执行，与 ServiceImpl 无循环依赖
 
-**6. StorageService / 双实现** — 文件存储（通过 `app.storage.type` 切换）
+**8. StorageService / 双实现** — 文件存储（通过 `app.storage.type` 切换）
    - `LocalStorageServiceImpl` — 本地文件系统存储（dev 用，`@ConditionalOnProperty(type=local)`）
    - `SupabaseStorageServiceImpl` — Supabase Storage REST API（prod 用，`@ConditionalOnProperty(type=supabase)`）
    - 接口：`store()`（MultipartFile / byte[]）、`readByUrl()`（HTTP GET / 本地读）、`deleteByUrl()`（清理用）
 
-**7. GlobalExceptionHandler** — 全局异常处理
+**9. GlobalExceptionHandler** — 全局异常处理
    - `BusinessException` → 200 + 业务错误码
    - `MethodArgumentNotValidException` / `ConstraintViolationException` → 400
    - `MissingServletRequestParameterException` → 400
    - `MaxUploadSizeExceededException` → 400
    - 未知异常 → 500
 
-**8. PhotoTransformTask** — 领域实体（JPA @Entity）
+**10. PhotoTransformTask** — 领域实体（JPA @Entity）
    - 状态：`PROCESSING → SUCCESS / FAILED`
    - 字段：taskId（@Id, 主键）, originalImageUrl, resultImageUrl, status, modelType, backgroundColor, photoType, errorMessage, createdTime, updatedTime
    - 映射表：`photo_transform_task`（Hibernate ddl-auto=update 自动建表）
 
-**9. ImageFetcher / Impl** — 图片下载组件
+**11. ImageFetcher / Impl** — 图片下载组件
    - 接口：`byte[] fetch(String url)`，从远程 URL 下载图片字节数据
    - 失败抛 `BusinessException(500)`，将网络 IO 从服务编排层分离到基础设施层
 
-**10. TaskIdGenerator** — 统一 ID 生成器
+**12. TaskIdGenerator** — 统一 ID 生成器
    - `@Component`，单方法 `generate(String prefix)`
    - 格式：prefix + UUID 去连字符取前 16 位大写
    - PhotoTransformServiceImpl（prefix=PT）和 SeedreamImageServiceImpl（prefix=SD）共享
 
-**11. StorageUtils** — 存储工具类
+**13. StorageUtils** — 存储工具类
    - 提供 `static extractExtension(String)` 方法
    - LocalStorageServiceImpl 和 SupabaseStorageServiceImpl 共享，消除重复代码
 
@@ -93,7 +103,9 @@ src/main/java/com/phototransform/
 | 启动类 | PhotoTransformApplication.java | Spring Boot 应用入口 |
 | 控制器 | controller/PhotoTransformController.java | API 接口定义 |
 | 核心服务 | service/impl/PhotoTransformServiceImpl.java | 任务创建、处理、查询、清理 |
-| Seedream 集成 | service/impl/SeedreamImageServiceImpl.java | AI 图像生成 API 调用 |
+| Seedream 业务层 | service/impl/SeedreamImageServiceImpl.java | 请求校验、能力识别、编排 |
+| Seedream SDK 适配 | service/impl/SeedreamClientImpl.java | ArkService 生命周期、SDK 调用、响应转换 |
+| 额度管理 | service/impl/QuotaManagerImpl.java | 统一额度扣减/增加/创建，悲观锁 |
 | 异步执行器 | service/impl/AsyncTaskExecutor.java | 事件驱动异步处理 |
 | Supabase 存储 | service/impl/SupabaseStorageServiceImpl.java | Supabase Storage REST API |
 | 本地存储 | service/impl/LocalStorageServiceImpl.java | 本地文件读写（dev） |
@@ -112,6 +124,10 @@ src/main/java/com/phototransform/
 | 图片下载组件 | service/ImageFetcher.java | 远程 URL 下载接口 |
 | 图片下载实现 | service/impl/ImageFetcherImpl.java | HTTP GET 下载实现 |
 | ID 生成器 | service/impl/TaskIdGenerator.java | 统一 ID 生成策略 |
+| SDK 适配接口 | service/SeedreamClient.java | Seedream SDK 适配层接口 |
+| 额度管理接口 | service/QuotaService.java | 额度扣减/增加/创建接口 |
+| Mock 短信 | service/impl/mock/MockSmsService.java | SmsService 占位实现 |
+| Mock 支付 | service/impl/mock/MockPaymentServiceImpl.java | PaymentService 占位实现 |
 | 存储工具类 | service/impl/StorageUtils.java | extractExtension 共享方法 |
 | 生成请求 DTO | dto/ImageGenerationRequest.java | Seedream 请求参数封装 |
 | 生成结果 DTO | dto/ImageGenerationResult.java | Seedream 响应结果封装 |
