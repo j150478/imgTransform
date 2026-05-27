@@ -123,12 +123,12 @@ src/main/java/com/phototransform/
 | Prompt 构建器 | service/impl/IdPhotoPromptBuilder.java | 模板加载 + photoType 路由 + 占位符替换 |
 | 图片下载组件 | service/ImageFetcher.java | 远程 URL 下载接口 |
 | 图片下载实现 | service/impl/ImageFetcherImpl.java | HTTP GET 下载实现 |
-| ID 生成器 | service/impl/TaskIdGenerator.java | 统一 ID 生成策略 |
+| ID 生成器 | common/TaskIdGenerator.java | 统一 ID 生成策略 |
 | SDK 适配接口 | service/SeedreamClient.java | Seedream SDK 适配层接口 |
 | 额度管理接口 | service/QuotaService.java | 额度扣减/增加/创建接口 |
 | Mock 短信 | service/impl/mock/MockSmsService.java | SmsService 占位实现 |
 | Mock 支付 | service/impl/mock/MockPaymentServiceImpl.java | PaymentService 占位实现 |
-| 存储工具类 | service/impl/StorageUtils.java | extractExtension 共享方法 |
+| 存储工具类 | common/StorageUtils.java | extractExtension 共享方法 |
 | 生成请求 DTO | dto/ImageGenerationRequest.java | Seedream 请求参数封装 |
 | 生成结果 DTO | dto/ImageGenerationResult.java | Seedream 响应结果封装 |
 

@@ -159,7 +159,9 @@ src/main/java/com/phototransform/
 │   ├── ApiResponse.java                        # 统一响应格式
 │   ├── BusinessException.java                  # 业务异常
 │   ├── GlobalExceptionHandler.java             # 全局异常处理
-│   └── TaskCreatedEvent.java                   # 异步任务事件
+│   ├── TaskCreatedEvent.java                   # 异步任务事件
+│   ├── TaskIdGenerator.java                    # ID 生成器
+│   └── StorageUtils.java                       # 存储工具类
 ├── config/
 │   ├── AppConfig.java                          # 线程池、RestTemplate、CORS
 │   ├── AppStorageProperties.java               # 存储类型/路径配置
@@ -195,9 +197,7 @@ src/main/java/com/phototransform/
         ├── LocalStorageServiceImpl.java        # 本地文件存储（dev）
         ├── PhotoTransformServiceImpl.java      # 核心业务逻辑
         ├── SeedreamImageServiceImpl.java        # Seedream API 集成
-        ├── SupabaseStorageServiceImpl.java     # Supabase Storage 实现（prod）
-        ├── TaskIdGenerator.java                # ID 生成器
-        └── StorageUtils.java                   # 存储工具类
+        └── SupabaseStorageServiceImpl.java     # Supabase Storage 实现（prod）
 ```
 
 ## 配置说明
