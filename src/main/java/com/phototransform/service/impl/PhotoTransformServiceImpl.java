@@ -2,6 +2,7 @@ package com.phototransform.service.impl;
 
 import com.phototransform.common.BusinessException;
 import com.phototransform.common.TaskCreatedEvent;
+import com.phototransform.common.TaskIdGenerator;
 import com.phototransform.config.AppTaskProperties;
 import com.phototransform.domain.entity.PhotoTransformTask;
 import com.phototransform.dto.ImageGenerationRequest;

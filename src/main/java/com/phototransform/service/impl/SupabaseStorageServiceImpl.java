@@ -1,6 +1,7 @@
 package com.phototransform.service.impl;
 
 import com.phototransform.common.BusinessException;
+import com.phototransform.common.StorageUtils;
 import com.phototransform.config.SupabaseStorageProperties;
 import com.phototransform.service.StorageService;
 import lombok.RequiredArgsConstructor;

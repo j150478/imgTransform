@@ -1,6 +1,7 @@
 package com.phototransform.service.impl;
 
 import com.phototransform.common.BusinessException;
+import com.phototransform.common.TaskIdGenerator;
 import com.phototransform.config.SeedreamClientConfig;
 import com.phototransform.dto.ImageGenerationRequest;
 import com.phototransform.dto.ImageGenerationResult;

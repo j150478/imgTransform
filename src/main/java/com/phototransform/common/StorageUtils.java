@@ -1,4 +1,4 @@
-package com.phototransform.service.impl;
+package com.phototransform.common;
 
 /**
  * 存储服务工具类
@@ -6,7 +6,7 @@ package com.phototransform.service.impl;
  * @author PhotoTransform Team
  * @since 1.0.0
  */
-final class StorageUtils {
+public final class StorageUtils {
 
     private StorageUtils() {
         // 工具类，禁止实例化
@@ -20,7 +20,7 @@ final class StorageUtils {
      * @param filename 文件名
      * @return 扩展名（包含点号，如 ".jpg"）
      */
-    static String extractExtension(String filename) {
+    public static String extractExtension(String filename) {
         if (filename == null || !filename.contains(".")) {
             return ".jpg";
         }

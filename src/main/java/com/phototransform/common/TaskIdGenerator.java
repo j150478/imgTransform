@@ -1,4 +1,4 @@
-package com.phototransform.service.impl;
+package com.phototransform.common;
 
 import org.springframework.stereotype.Component;
 
