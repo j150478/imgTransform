@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<module version="4">
+  <component name="AdditionalModuleElements">
+    <content url="file://$MODULE_DIR$" dumb="true">
+      <excludeFolder url="file://$MODULE_DIR$/.agents" />
+      <excludeFolder url="file://$MODULE_DIR$/.claude/skills" />
+      <excludeFolder url="file://$MODULE_DIR$/.claude/skills/debug-issue" />
+      <excludeFolder url="file://$MODULE_DIR$/.claude/skills/explore-codebase" />
+      <excludeFolder url="file://$MODULE_DIR$/.claude/skills/refactor-safely" />
+      <excludeFolder url="file://$MODULE_DIR$/.claude/skills/review-changes" />
+      <excludeFolder url="file://$MODULE_DIR$/.claude/worktrees" />
+      <excludeFolder url="file://$MODULE_DIR$/.code-review-graph" />
+      <excludeFolder url="file://$MODULE_DIR$/.idea/dataSources" />
+      <excludeFolder url="file://$MODULE_DIR$/.scratch" />
+      <excludeFolder url="file://$MODULE_DIR$/docs/agents" />
+      <excludeFolder url="file://$MODULE_DIR$/logs" />
+      <excludeFolder url="file://$MODULE_DIR$/src/test/java/com/phototransform/controller" />
+      <excludeFolder url="file://$MODULE_DIR$/src/test/java/com/phototransform/service" />
+      <excludeFolder url="file://$MODULE_DIR$/test-uploads" />
+    </content>
+  </component>
+</module>

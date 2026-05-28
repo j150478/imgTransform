@@ -1,5 +1,14 @@
-
+# AI toolchain (not project-specific)
+.mcp.json
+skills-lock.json
+.scratch/
 .vscode/
+.claude/
+.agents/
+# Added by code-review-graph
+.code-review-graph/
+docs/agents/
+
 
 # 忽略 .trae 目录
 .trae/
@@ -38,35 +47,7 @@ dev-uploads/
 
 # virtual machine crash logs, see http://www.java.com/en/download/help/error_hotspot.xml
 hs_err_pid*
-# Added by code-review-graph
-.code-review-graph/
-
-# AI toolchain (not project-specific)
-.agents/
-.mcp.json
-skills-lock.json
-.claude/settings.json
-.claude/skills/caveman
-.claude/skills/diagnose
-.claude/skills/grill-me
-.claude/skills/grill-with-docs
-.claude/skills/handoff
-.claude/skills/improve-codebase-architecture
-.claude/skills/prototype
-.claude/skills/setup-matt-pocock-skills
-.claude/skills/tdd
-.claude/skills/to-issues
-.claude/skills/to-prd
-.claude/skills/triage
-.claude/skills/debug-issue
-.claude/skills/explore-codebase
-.claude/skills/refactor-safely
-.claude/skills/review-changes
-.claude/skills/write-a-skill
-.claude/skills/zoom-out
-docs/agents/
 
 # Test uploads
 test-uploads/
 .DS_Store
-
