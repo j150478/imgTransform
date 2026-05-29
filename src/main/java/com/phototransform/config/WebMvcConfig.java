@@ -8,7 +8,7 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 /**
  * Web MVC 配置类，注册认证拦截器。
  *
- * <p>对 {@code /api/photo/**}、{@code /api/user/logout}、{@code /api/payment/**}
+ * <p>对 {@code /api/photo/**}、{@code /api/seedream/**}、{@code /api/user/logout}、{@code /api/payment/**}
  * 路径进行 Token 认证，排除注册和登录接口。</p>
  */
 @Configuration
@@ -31,6 +31,7 @@ public class WebMvcConfig implements WebMvcConfigurer {
      * <p>认证路径：
      * <ul>
      *   <li>{@code /api/photo/**} — 照片转换相关接口</li>
+ *   <li>{@code /api/seedream/**} — 文生图相关接口</li>
      *   <li>{@code /api/user/logout} — 用户登出</li>
      *   <li>{@code /api/payment/**} — 支付相关接口</li>
      * </ul>
@@ -45,7 +46,7 @@ public class WebMvcConfig implements WebMvcConfigurer {
     @Override
     public void addInterceptors(InterceptorRegistry registry) {
         registry.addInterceptor(authInterceptor)
-                .addPathPatterns("/api/photo/**", "/api/user/logout", "/api/payment/**")
+                .addPathPatterns("/api/photo/**", "/api/seedream/**", "/api/user/logout", "/api/payment/**")
                 .excludePathPatterns("/api/user/send-code", "/api/user/login");
     }
 }
