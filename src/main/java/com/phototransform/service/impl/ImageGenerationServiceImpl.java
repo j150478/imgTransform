@@ -159,17 +159,25 @@ public class ImageGenerationServiceImpl implements ImageGenerationService {
     }
 
     /**
-     * 下载并保存结果图片
+     * 保存结果图片（支持 URL 下载和 base64 直接解码）
      */
     private List<String> saveResultImages(ImageGenerationResult result, String taskId) {
         List<String> urls = new ArrayList<>();
         int idx = 0;
         for (ImageGenerationResult.GeneratedImage img : result.getImages()) {
-            if (img.getError() != null || img.getUrl() == null) {
+            if (img.getError() != null) {
                 continue;
             }
             try {
-                byte[] imageBytes = imageFetcher.fetch(img.getUrl());
+                // 1. 优先从 base64 解码，其次从 URL 下载
+                byte[] imageBytes;
+                if (img.getB64Json() != null && !img.getB64Json().isEmpty()) {
+                    imageBytes = java.util.Base64.getDecoder().decode(img.getB64Json());
+                } else if (img.getUrl() != null && !img.getUrl().isEmpty()) {
+                    imageBytes = imageFetcher.fetch(img.getUrl());
+                } else {
+                    continue;
+                }
                 String fileName = taskId + "_" + idx + ".jpg";
                 String url = storageService.store(imageBytes, fileName);
                 urls.add(url);

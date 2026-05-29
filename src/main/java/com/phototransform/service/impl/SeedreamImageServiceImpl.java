@@ -11,6 +11,7 @@ import com.phototransform.service.SeedreamClient;
 import com.phototransform.service.SeedreamImageService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -33,6 +34,7 @@ import java.util.List;
 @Slf4j
 @Service
 @RequiredArgsConstructor
+@ConditionalOnProperty(name = "app.seedream.mode", havingValue = "real", matchIfMissing = true)
 public class SeedreamImageServiceImpl implements SeedreamImageService {
 
     /**

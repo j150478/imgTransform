@@ -1,0 +1,5 @@
+# seedream-real profile — 覆盖 test profile 的 mock 设置，启用真实 Seedream API
+# 仅用于 PhotoTransformControllerRealApiTest 等需真实 API 调用的端到端测试
+app:
+  seedream:
+    mode: real

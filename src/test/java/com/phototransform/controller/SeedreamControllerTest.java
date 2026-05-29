@@ -1,28 +1,13 @@
 package com.phototransform.controller;
 
-import com.phototransform.common.JwtUtil;
-import com.phototransform.domain.entity.User;
-import com.phototransform.domain.entity.UserQuota;
 import com.phototransform.dto.TextToImageResponse;
 import com.phototransform.enums.ImageTaskStatus;
-import com.phototransform.repository.UserQuotaRepository;
-import com.phototransform.repository.UserRepository;
 import com.phototransform.service.ImageGenerationService;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestInstance;
-import org.junit.jupiter.api.TestInstance.Lifecycle;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
-import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
-import org.springframework.test.context.ActiveProfiles;
-import org.springframework.test.web.servlet.MockMvc;
 
-import java.time.LocalDateTime;
-import java.util.Collections;
+import java.util.Arrays;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
@@ -35,49 +20,10 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 /**
  * SeedreamController 集成测试
  */
-@SpringBootTest
-@AutoConfigureMockMvc
-@ActiveProfiles("test")
-@TestInstance(Lifecycle.PER_CLASS)
-class SeedreamControllerTest {
-
-    @Autowired
-    private MockMvc mockMvc;
-
-    @Autowired
-    private JwtUtil jwtUtil;
-
-    @Autowired
-    private UserRepository userRepository;
-
-    @Autowired
-    private UserQuotaRepository userQuotaRepository;
+class SeedreamControllerTest extends BaseControllerTest {
 
     @MockBean
     private ImageGenerationService imageGenerationService;
-
-    private String authToken;
-
-    @BeforeAll
-    void setUp() {
-        User user = User.builder()
-                .phone("13800138001")
-                .status(com.phototransform.enums.UserStatus.ACTIVE)
-                .createdTime(LocalDateTime.now())
-                .updatedTime(LocalDateTime.now())
-                .build();
-        user = userRepository.save(user);
-
-        UserQuota quota = UserQuota.builder()
-                .userId(user.getId())
-                .remaining(10)
-                .createdTime(LocalDateTime.now())
-                .updatedTime(LocalDateTime.now())
-                .build();
-        userQuotaRepository.save(quota);
-
-        authToken = jwtUtil.generateToken(user.getId());
-    }
 
     /**
      * POST /api/seedream/generate — 成功 → 200 PROCESSING + taskId
@@ -101,7 +47,7 @@ class SeedreamControllerTest {
     }
 
     /**
-     * POST /api/seedream/generate — 空 prompt → 400
+     * POST /api/seedream/generate — 空 prompt → 200 + code 400
      */
     @Test
     void generate_emptyPrompt() throws Exception {
@@ -121,7 +67,7 @@ class SeedreamControllerTest {
         TextToImageResponse response = TextToImageResponse.builder()
                 .taskId("TI_TEST_ABCD1234")
                 .status(ImageTaskStatus.SUCCESS)
-                .imageUrls(java.util.Arrays.asList("http://img1.jpg", "http://img2.jpg"))
+                .imageUrls(Arrays.asList("http://img1.jpg", "http://img2.jpg"))
                 .build();
         when(imageGenerationService.queryResult("TI_TEST_ABCD1234")).thenReturn(response);
 
@@ -136,7 +82,7 @@ class SeedreamControllerTest {
     }
 
     /**
-     * GET /api/seedream/result — 不存在的 taskId → 服务层抛异常
+     * GET /api/seedream/result — 不存在 → 200 + code 404
      */
     @Test
     void getResult_notFound() throws Exception {

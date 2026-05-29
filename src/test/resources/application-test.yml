@@ -1,0 +1,35 @@
+# 测试环境配置 - 使用 H2 内存数据库
+spring:
+  datasource:
+    url: jdbc:h2:mem:testdb;DB_CLOSE_DELAY=-1;MODE=PostgreSQL
+    driver-class-name: org.h2.Driver
+    username: sa
+    password:
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.H2Dialect
+
+# Redis 配置（测试环境连接本地 Redis）
+redis:
+  host: localhost
+  port: 6379
+
+# JWT 配置（测试环境）
+jwt:
+  secret: test-jwt-secret-key-for-testing-only
+  expiration-days: 7
+
+app:
+  storage:
+    type: local
+    local-path: test-uploads/
+    url-prefix: http://localhost:8080/test-uploads/
+  task:
+    timeout-hours: 1
+    expiry-hours: 24
+    cleanup-cron: 0 0 * * * ?
+  seedream:
+    mode: mock

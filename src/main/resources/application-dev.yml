@@ -52,6 +52,9 @@ seedream:
 
 # 应用自定义配置（开发模式）
 app:
+  seedream:
+    # 开发环境使用 mock，不消耗真实 API 额度
+    mode: mock
   storage:
     # 开发环境使用本地存储
     type: local
