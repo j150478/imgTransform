@@ -38,6 +38,12 @@ Seedream 图像生成能力分类，共六种：文生图/单图生图/多图生
 ### PARTIAL_SUCCESS
 Seedream 组图模式下部分图片生成失败但仍有可用图片时的响应状态。系统将其等同于 SUCCESS 处理，选取首个有效图片作为结果。
 
+### Text-to-Image
+文生图，纯文本提示词 → AI 生成图片。使用 Seedream TEXT_TO_IMAGE / TEXT_TO_IMAGE_SET 能力，无需参考图。与证件照转化（图生图）共享 Seedream 后端，但任务实体和 API 端点独立。异步模式：提交 prompt → 轮询图片 URL 列表。
+
+### ImageGenerationTask
+文生图任务实体。存储 prompt、resultImageUrls（逗号分隔）、状态（PROCESSING/SUCCESS/FAILED）。区别于 PhotoTransformTask（后者有 originalImageUrl、photoType、backgroundColor 等图生图专有字段）。两者共享异步事件模式和超时清理机制。
+
 ### PromptTemplate
 prompt 模板，包含 system（正面指令）和 negative（负面约束）两个分段。存储在配置文件的 prompt.templates 下，以 photoType 为 key。支持 {name}/{rgb} 占位符替换。
 

@@ -1,6 +1,8 @@
 package com.phototransform.service.impl;
 
+import com.phototransform.common.ImageTaskCreatedEvent;
 import com.phototransform.common.TaskCreatedEvent;
+import com.phototransform.service.ImageGenerationService;
 import com.phototransform.service.PhotoTransformService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -20,6 +22,7 @@ import org.springframework.stereotype.Component;
 public class AsyncTaskExecutor {
 
     private final PhotoTransformService photoTransformService;
+    private final ImageGenerationService imageGenerationService;
 
     /**
      * 异步处理任务创建事件
@@ -38,5 +41,16 @@ public class AsyncTaskExecutor {
 
         // 2. 委托服务处理任务（由服务内部加载实体）
         photoTransformService.processTransformTask(taskId);
+    }
+
+    /**
+     * 异步处理图像生成任务
+     */
+    @Async("taskExecutor")
+    @EventListener
+    public void onImageTaskCreated(ImageTaskCreatedEvent event) {
+        String taskId = event.getTaskId();
+        log.info("[{}] 异步图像生成任务开始执行", taskId);
+        imageGenerationService.processTask(taskId);
     }
 }
